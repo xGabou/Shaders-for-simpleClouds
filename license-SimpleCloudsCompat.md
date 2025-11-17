@@ -1,15 +1,39 @@
-This notice applies ONLY to the files and code added by the
-“SimpleClouds – Oculus Bridge” integration, including any custom GLSL
-uniforms, shader files, Java mixins, or support code created by Gabou.
+# SimpleClouds Oculus Integration — Addon License Notice
 
-These files are NOT part of Complementary Shaders and are NOT governed
-by the Complementary License Agreement. Complementary Shaders remain
-fully governed by their own license without modification.
+This notice applies **only to the files added by this addon** and **does not modify the Complementary License Agreement 1.5**.  
+All rights belonging to Complementary Development remain unchanged.
 
-All rights for the SimpleClouds integration and its shader files are
-reserved. Redistribution, reuse, or modification of these added files
-is not permitted without explicit permission from the author.
+---
 
-This notice does not modify, override, or replace the Complementary
-license in any way. It applies solely to the new files introduced by
-this addon.
+## Scope
+
+The following files are covered by this notice:
+
+- All **SimpleClouds shader files** (`.fsh`, `.vsh`, `.glsl`)
+- All **Java integration code** used to bridge SimpleClouds with Oculus/Iris
+- All **uniform injections**, **mixins**, and **pipeline hooks**
+- Any other resources created by **Gabou** specifically for this addon
+
+These files are **independent from Complementary** and remain fully owned by their author.
+
+---
+
+## Rights
+
+- You may **use** this addon for personal gameplay.  
+- You may **include** this addon in a **private, non-redistributed modpack**.
+
+---
+
+## Restrictions
+
+- **Redistribution is not allowed.**  
+- **Modification** of the addon’s files is not allowed.  
+- **Public repackaging**, **reuse**, or **integration** into other shaderpacks or mods is not allowed.
+
+---
+
+## Summary
+
+All SimpleClouds addon files are **All Rights Reserved** by **Gabou**.  
+Complementary’s license applies only to Complementary files, not to this addon.
