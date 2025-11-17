@@ -18,22 +18,48 @@ These files are **independent from Complementary** and remain fully owned by the
 
 ---
 
+## Compatibility & Purpose
+
+This addon provides **visual integration between SimpleClouds and Oculus/Iris**.  
+It is designed **for SimpleClouds**, but **you may use it without SimpleClouds installed if you wish**.
+
+Thanks to **nonamecrackers2** for creating SimpleClouds.  
+This addon **does not modify or alter SimpleClouds’ internal logic** — it **only reads its public cloud state and passes it to shaders**.  
+All cloud simulation, generation, and rendering logic remains entirely owned and controlled by the SimpleClouds mod.
+
+---
+
 ## Rights
 
-- You may **use** this addon for personal gameplay.  
-- You may **include** this addon in a **private, non-redistributed modpack**.
+### ✔ Allowed
+- **Normal gameplay usage**
+- **Content creation** (screenshots, videos, streams)
+- **Public redistribution inside a modpack**, under the following strict conditions:
+  - The modpack **must not** include this addon's `.jar` file directly inside the ZIP.
+  - The modpack must instead **link** to the addon’s Modrinth or CurseForge page so that users download it **individually** from the official source.
+  - The original `.jar` must remain **unmodified**.
+
+### ✘ Not Allowed
+- Direct redistribution of the `.jar` file itself
+- Bundling the `.jar` inside a modpack ZIP
+- Modification of any addon files
+- Integration of this addon into another shaderpack or mod
+- Reuploading to any platform without authorization
 
 ---
 
 ## Restrictions
 
-- **Redistribution is not allowed.**  
-- **Modification** of the addon’s files is not allowed.  
-- **Public repackaging**, **reuse**, or **integration** into other shaderpacks or mods is not allowed.
+- All addon files are **All Rights Reserved**.
+- You may not modify, decompile, rewrite, or reuse the contents of this addon.
+- You may not create derivative works based on this addon.
 
 ---
 
 ## Summary
 
-All SimpleClouds addon files are **All Rights Reserved** by **Gabou**.  
-Complementary’s license applies only to Complementary files, not to this addon.
+All SimpleClouds addon files are **fully owned and protected** by **Gabou**.  
+Complementary’s license governs Complementary files only.  
+This addon may be used freely and is compatible with or without SimpleClouds installed.  
+Modpacks may include it only by linking to its official download page.
+
