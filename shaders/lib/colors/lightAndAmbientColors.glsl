@@ -64,8 +64,8 @@
         vec3 rainLightColor   = mix(nightRainLightColor, dayRainLightColor, sunVisibility2) * 2.5;
         vec3 rainAmbientColor = mix(nightRainAmbientColor, dayRainAmbientColor, sunVisibility2);
 
-        vec3 lightColor   = mix(clearLightColor, rainLightColor, rainFactor);
-        vec3 ambientColor = mix(clearAmbientColor, rainAmbientColor, rainFactor);
+        vec3 baseLightColor   = mix(clearLightColor, rainLightColor, rainFactor);
+        vec3 baseAmbientColor = mix(clearAmbientColor, rainAmbientColor, rainFactor);
 
         float scStormDark = GetSimpleCloudStormDarkness();
         float scThicknessScale = GetSimpleCloudThicknessScale();
@@ -73,8 +73,8 @@
         float lightThicknessBoost = mix(0.85, 1.15, thicknessMask);
         float ambientThicknessBoost = mix(0.9, 1.1, thicknessMask);
 
-        lightColor *= mix(1.0, 0.45, scStormDark) * lightThicknessBoost;
-        ambientColor *= mix(1.0, 0.7, scStormDark) * ambientThicknessBoost;
+        vec3 lightColor   = baseLightColor * mix(1.0, 0.45, scStormDark) * lightThicknessBoost;
+        vec3 ambientColor = baseAmbientColor * mix(1.0, 0.7, scStormDark) * ambientThicknessBoost;
     #elif defined NETHER
         vec3 lightColor   = vec3(0.0);
         vec3 ambientColor = (netherColor + 0.5 * lavaLightColor) * (0.9 + 0.45 * vsBrightness);
