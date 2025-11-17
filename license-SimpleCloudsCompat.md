@@ -23,7 +23,7 @@ These files are **independent from Complementary** and remain fully owned by the
 This addon provides **visual integration between SimpleClouds and Oculus/Iris**.  
 It is designed **for SimpleClouds**, but **you may use it without SimpleClouds installed if you wish**.
 
-Thanks to **nonamecrackers2** for creating SimpleClouds.  
+Special thanks to [nonamecrackers2](https://github.com/nonamecrackers2/simple-clouds) — creator of SimpleClouds.
 This addon **does not modify or alter SimpleClouds’ internal logic** — it **only reads its public cloud state and passes it to shaders**.  
 All cloud simulation, generation, and rendering logic remains entirely owned and controlled by the SimpleClouds mod.
 
