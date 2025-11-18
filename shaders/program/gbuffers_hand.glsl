@@ -4,6 +4,7 @@
 
 //Common//
 #include "/lib/common.glsl"
+#include "/lib/util/sc_bridge.glsl"
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
@@ -162,18 +163,21 @@ void main() {
         #endif
     }
 
+    #ifdef USE_SC
+    {
+        float scShadow = clamp(Get_SC_FinalShadow(), 0.0, 1.0);
+        vec3 skyGlow = mix(ambientColor, skyColor * 1.2, 0.5) * 0.6;
+        color.rgb = mix(color.rgb, mix(color.rgb, skyGlow, 0.7), scShadow * 0.5);
+    }
+    #endif
+
     #ifdef COLOR_CODED_PROGRAMS
         ColorCodeProgram(color, -1);
     #endif
     #ifdef USE_SC
     {
-        float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-        float stormN = clamp(stormRaw/2, 0.0, 1.0);
-        float stormCurve = pow(stormN, 1.1);
-
-        float scDarkFactor = mix(1.0, 0.78, stormCurve);
-        scDarkFactor = max(scDarkFactor, 0.78);
-        color.rgb *= scDarkFactor;
+        float scStorm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+        color.rgb *= mix(1.0, 0.85, scStorm);
     }
     #endif
 

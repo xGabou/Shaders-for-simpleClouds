@@ -96,9 +96,11 @@ void main() {
         }
     }
 
-    vec3 lightRain = blocklightCol * 2.0 * lmCoord.x
-               + (ambientColor + 0.2 * lightColor) * lmCoord.y * (0.6 + 0.3 * sunFactor);
-
+    vec3 skyTone = mix(vec3(1.0), skyColor * 1.1, 0.4 * (1.0 - rainFactor));
+    vec3 lightRain = (blocklightCol * 2.0 * lmCoord.x
+               + (ambientColor + 0.2 * lightColor) * lmCoord.y * (0.6 + 0.3 * sunFactor));
+    lightRain *= mix(vec3(1.0), skyTone, 0.5 * (1.0 - snowTexOpacity));
+    
     #ifdef USE_SC
     {
         float storm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);

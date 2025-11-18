@@ -4,6 +4,7 @@
 
 //Common//
 #include "/lib/common.glsl"
+#include "/lib/util/sc_bridge.glsl"
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
@@ -102,12 +103,7 @@ void main() {
     vec3 normalM = normal;
 
     float alphaCheck = color.a;
-    #ifdef DO_PIXELATION_EFFECTS
-        // Fixes artifacts on fragment edges with non-nvidia gpus
-        alphaCheck = max(fwidth(color.a), alphaCheck);
-    #endif
-
-    if (alphaCheck > 0.001) {
+    if (alphaCheck > 0.0001) {
         vec3 screenPos = vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), gl_FragCoord.z);
         vec3 viewPos = ScreenToView(screenPos);
         vec3 nViewPos = normalize(viewPos);
@@ -181,8 +177,12 @@ void main() {
         ColorCodeProgram(color, -1);
     #endif
 
-    color.rgb = color.rgb * 1.5 + vec3(0.08);
-    color.rgb = max(color.rgb, vec3(0.12));
+    #ifdef USE_SC
+    {
+        float scStorm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+        color.rgb *= mix(1.0, 0.85, scStorm);
+    }
+    #endif
     // #ifdef USE_SC
     // {
     //     float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);

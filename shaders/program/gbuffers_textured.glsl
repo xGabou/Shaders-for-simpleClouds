@@ -111,11 +111,15 @@ void main() {
         } else if (color.b > 0.7 && color.r < 0.28 && color.g < 0.425 && color.g > color.r * 1.4){ // physics mod rain
             if (color.a < 0.1 || isEyeInWater == 3) discard;
             color.a *= rainTexOpacity;
-            color.rgb = sqrt2(color.rgb) * (blocklightCol * 2.0 * lmCoord.x + ambientColor * lmCoord.y * (0.7 + 0.35 * sunFactor));
+            vec3 rainLighting = blocklightCol * 2.0 * lmCoord.x + ambientColor * lmCoord.y * (0.7 + 0.35 * sunFactor);
+            vec3 skyInfluence = mix(vec3(1.0), skyColor * 1.05, 0.35);
+            color.rgb = sqrt2(color.rgb) * mix(rainLighting, skyInfluence, 0.4);
         } else if (color.rgb == vec3(1.0) && color.a < 0.765 && color.a > 0.605) { // physics mod snow (default snow opacity only)
             if (color.a < 0.1 || isEyeInWater == 3) discard;
             color.a *= snowTexOpacity;
-            color.rgb = sqrt2(color.rgb) * (blocklightCol * 2.0 * lmCoord.x + lmCoord.y * (0.7 + 0.35 * sunFactor) + ambientColor * 0.2);
+            vec3 snowLighting = blocklightCol * 2.0 * lmCoord.x + lmCoord.y * (0.7 + 0.35 * sunFactor) + ambientColor * 0.2;
+            vec3 snowSky = mix(vec3(1.0), skyColor * 1.12, 0.55);
+            color.rgb = sqrt2(color.rgb) * mix(snowLighting, snowSky, 0.45);
         #endif
         } else if (color.r == color.g && color.r - 0.5 * color.b < 0.06) { // Underwater Particle
             if (isEyeInWater == 1) {
