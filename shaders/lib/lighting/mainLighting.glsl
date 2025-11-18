@@ -650,7 +650,7 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
     #endif
 
     // Light Highlight
-    vec3 lightHighlight = vec3(0.0);
+        vec3 lightHighlight = vec3(0.0);
     #ifdef LIGHT_HIGHLIGHT
         float specularHighlight = GGX(normalM, nViewPos, lightVec, NdotLmax0, smoothnessG);
 
@@ -658,6 +658,13 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
 
         lightHighlight = isEyeInWater != 1 ? shadowMult : pow(shadowMult, vec3(0.25)) * 0.35;
         lightHighlight *= (subsurfaceHighlight + specularHighlight) * highlightColor;
+
+        #ifdef USE_SC
+            // Fade specular glare when thick clouds block the sun
+            float scShadow = clamp(Get_SC_FinalShadow(), 0.0, 1.0);
+            float scGlareFade = 1.0 - smoothstep(0.25, 0.85, scShadow);
+            lightHighlight *= scGlareFade;
+        #endif
 
         #ifdef LIGHT_COLOR_MULTS
             lightHighlight *= lightColorMult;

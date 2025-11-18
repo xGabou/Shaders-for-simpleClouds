@@ -217,8 +217,16 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
                 skyReflection *= forcedSkyLight;
             #else
                 float specularHighlight = GGX(normalM, nViewPos, lightVec, max(dot(normalM, lightVec), 0.0), smoothness);
+
+                #ifdef USE_SC
+                    // Reduce sun glints on water when clouds cast heavy shadows
+                    float scShadow = clamp(Get_SC_FinalShadow(), 0.0, 1.0);
+                    float scGlareFade = 1.0 - smoothstep(0.25, 0.85, scShadow);
+                    specularHighlight *= scGlareFade;
+                #endif
+
                 skyReflection += specularHighlight * highlightColor * shadowMult * highlightMult * invRainFactor;
-                
+
                 #if WATER_REFLECT_QUALITY >= 1
                     #ifdef SKY_EFFECT_REFLECTION
                         float cloudLinearDepth = 1.0;
