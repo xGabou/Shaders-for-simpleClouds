@@ -94,6 +94,7 @@
     #define ATM_CLOUD_TINT 1 //[0 1]
     #define ATM_COLOR_GRADE 1 //[0 1]
     #define ATM_ENV_POLISH 1 //[0 1]
+    #define ATM_CLOUD_SHADOWS 1 //[0 1]
     #define CLOUD_STYLE_DEFINE -1 //[-1 0 1 3 50]
     //#define CLOUD_SHADOWS
     #define CLOUD_CLOSED_AREA_CHECK

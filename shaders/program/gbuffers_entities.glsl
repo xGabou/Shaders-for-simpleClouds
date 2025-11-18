@@ -180,6 +180,9 @@ void main() {
     #ifdef COLOR_CODED_PROGRAMS
         ColorCodeProgram(color, -1);
     #endif
+
+    color.rgb = color.rgb * 1.5 + vec3(0.08);
+    color.rgb = max(color.rgb, vec3(0.12));
     // #ifdef USE_SC
     // {
     //     float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);

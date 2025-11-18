@@ -545,6 +545,10 @@ option.ATM_ENV_POLISH=Optional Atmosphere Polish
 option.ATM_ENV_POLISH.comment=Enables lens raindrops, heat haze, micro sky noise, moon halos, and other subtle embellishments.
 value.ATM_ENV_POLISH.0=OFF
 value.ATM_ENV_POLISH.1=ON
+option.ATM_CLOUD_SHADOWS=Cloud Shadow Casting
+option.ATM_CLOUD_SHADOWS.comment=Allows SimpleClouds volumes to cast soft shadows into the sun shadow map. Slightly heavier than the default lighting darkening.
+value.ATM_CLOUD_SHADOWS.0=OFF
+value.ATM_CLOUD_SHADOWS.1=ON
 
 option.AURORA_STYLE_DEFINE=Aurora Borealis Style
 option.AURORA_STYLE_DEFINE.comment=Determines the style of northern lights that appear in the night sky.

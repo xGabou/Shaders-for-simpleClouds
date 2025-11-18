@@ -8,6 +8,9 @@
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
 
+#include "/lib/util/sc_bridge.glsl"
+#include "/lib/atmospherics/atmoCommon.glsl"
+
 flat in int mat;
 
 in vec2 texCoord;
@@ -43,9 +46,53 @@ void DoNaturalShadowCalculation(inout vec4 color1, inout vec4 color2) {
     #include "/lib/materials/materialMethods/connectedGlass.glsl"
 #endif
 
+#if ATM_CLOUD_SHADOWS == 1 && defined OVERWORLD
+float SampleProceduralCloudDensity(vec3 worldPos, float coverage) {
+    const float cloudBase = 96.0;
+    const float cloudTop  = 220.0;
+    float heightMask = smoothstep(cloudBase - 16.0, cloudBase + 24.0, worldPos.y)
+                     * smoothstep(cloudTop + 32.0, cloudTop - 32.0, worldPos.y);
+    if (heightMask <= 0.0) return 0.0;
+
+    vec2 coord = worldPos.xz * 0.002 + frameTimeCounter * 0.002;
+    float noise = texture2D(noisetex, coord).g;
+          noise += texture2D(noisetex, coord * 0.5 + 0.37).r * 0.5;
+    float threshold = mix(0.72, 0.5, coverage);
+    float density = smoothstep(threshold - 0.08, threshold + 0.1, noise);
+    return density * heightMask;
+}
+
+float GetCloudShadowMask(vec3 worldPos, vec3 sunDirection) {
+    float scStorm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+    float scThick = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+    float coverage = max(max(scStorm, scThick), rainFactor);
+    if (coverage < 0.05) return 0.0;
+
+    vec3 dir = normalize(sunDirection);
+    float opacity = 0.0;
+    const float stepLength = 18.0;
+
+    for (int i = 0; i < 6; i++) {
+        worldPos += dir * stepLength;
+        float density = SampleProceduralCloudDensity(worldPos, coverage);
+        opacity += density * stepLength * 0.015;
+        if (opacity >= 1.0) break;
+    }
+
+    opacity *= coverage;
+    return clamp(opacity, 0.0, 1.0);
+}
+#endif
+
 //Program//
 void main() {
     vec4 color1 = texture2DLod(tex, texCoord, 0); // Shadow Color
+
+    #if ATM_CLOUD_SHADOWS == 1 && defined OVERWORLD
+        float cloudShadowMask = GetCloudShadowMask(position.xyz, -sunVec);
+    #else
+        float cloudShadowMask = 0.0;
+    #endif
 
     #if SHADOW_QUALITY >= 1
         vec4 color2 = color1; // Light Shaft Color
@@ -184,11 +231,23 @@ void main() {
         }
     #endif
 
+    #if ATM_CLOUD_SHADOWS == 1 && defined OVERWORLD
+        if (cloudShadowMask > 0.001) {
+            color1.rgb *= 1.0 - 0.85 * cloudShadowMask;
+        }
+    #endif
+
     gl_FragData[0] = color1; // Shadow Color
 
     #if SHADOW_QUALITY >= 1
         #if defined LIGHTSHAFTS_ACTIVE && LIGHTSHAFT_BEHAVIOUR == 1 && defined OVERWORLD
             color2.a = 0.25 + max0(positionYM * 0.05); // consistencyMEJHRI7DG
+        #endif
+
+        #if ATM_CLOUD_SHADOWS == 1 && defined OVERWORLD
+            if (cloudShadowMask > 0.001) {
+                color2.rgb *= 1.0 - 0.7 * cloudShadowMask;
+            }
         #endif
 
         gl_FragData[1] = color2; // Light Shaft Color
