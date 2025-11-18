@@ -1,4 +1,5 @@
 #ifndef INCLUDE_WATER_FOG
+#include "/lib/util/sc_bridge.glsl"
     #define INCLUDE_WATER_FOG
     
     float GetWaterFog(float lViewPos) {

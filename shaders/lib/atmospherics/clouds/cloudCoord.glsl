@@ -15,16 +15,22 @@
     }
 
     vec3 ModifyTracePos(vec3 tracePos, int cloudAltitude) {
-        #if CLOUD_SPEED_MULT == 100
-            float wind = syncedTime;
-        #else
-            #define CLOUD_SPEED_MULT_M CLOUD_SPEED_MULT * 0.01
-            float wind = frameTimeCounter * CLOUD_SPEED_MULT_M;
-        #endif
-        tracePos.x += wind;
-        tracePos.z += cloudAltitude * 64.0;
-        tracePos.xz *= cloudNarrowness;
-        return tracePos.xyz;
-    }
+    #ifdef USE_SC
+        return tracePos;
+    #endif
+
+    #if CLOUD_SPEED_MULT == 100
+        float wind = syncedTime;
+    #else
+        #define CLOUD_SPEED_MULT_M CLOUD_SPEED_MULT * 0.01
+        float wind = frameTimeCounter * CLOUD_SPEED_MULT_M;
+    #endif
+
+    tracePos.x += wind;
+    tracePos.z += cloudAltitude * 64.0;
+    tracePos.xz *= cloudNarrowness;
+    return tracePos.xyz;
+}
+
 
 #endif

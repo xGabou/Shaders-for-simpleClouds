@@ -4,6 +4,7 @@
 
 //Common//
 #include "/lib/common.glsl"
+#include "/lib/util/sc_bridge.glsl"
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
@@ -34,12 +35,34 @@ in vec4 glColor;
 //Pipeline Constants//
 
 //Common Variables//
+
+
+// invert mask so 1 = disable sun, 0 = do nothing
 float NdotU = dot(normal, upVec);
 float NdotUmax0 = max(NdotU, 0.0);
 float SdotU = dot(sunVec, upVec);
-float sunFactor = SdotU < 0.0 ? clamp(SdotU + 0.375, 0.0, 0.75) / 0.75 : clamp(SdotU + 0.03125, 0.0, 0.0625) / 0.0625;
-float sunVisibility = clamp(SdotU + 0.0625, 0.0, 0.125) / 0.125;
-float sunVisibility2 = sunVisibility * sunVisibility;
+float scRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+float scDisable = step(0.08, scRaw); // 1.0 if storm, 0.0 if not
+float mask = 1.0 - scDisable;
+
+float sunFactor =
+    (SdotU < 0.0
+        ? clamp(SdotU + 0.375, 0.0, 0.75) / 0.75
+        : clamp(SdotU + 0.03125, 0.0, 0.0625) / 0.0625)
+    * mask;
+
+float sunVisibility =
+    (clamp(SdotU + 0.0625, 0.0, 0.125) / 0.125)
+    * mask;
+
+float sunVisibility2 =
+    (sunVisibility * sunVisibility)
+    * mask;
+
+
+
+
+
 float shadowTimeVar1 = abs(sunVisibility - 0.5) * 2.0;
 float shadowTimeVar2 = shadowTimeVar1 * shadowTimeVar1;
 float shadowTime = shadowTimeVar2 * shadowTimeVar2;
@@ -169,16 +192,28 @@ void main() {
     #ifdef COLOR_CODED_PROGRAMS
         ColorCodeProgram(color, blockEntityId);
     #endif
+    // #ifdef USE_SC
+    // {
+    //     float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+    //     float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
+    //     float stormCurve = pow(stormN, 2.5);
+
+    //     float scDarkFactor = mix(1.0, 0.15, stormCurve);
+    //     color.rgb *= scDarkFactor;
+    // }
+    // #endif
     #ifdef USE_SC
     {
         float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
         float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
         float stormCurve = pow(stormN, 2.5);
 
-        float scDarkFactor = mix(1.0, 0.15, stormCurve);
-        color.rgb *= scDarkFactor;
+        // DEBUG: SHOW EFFECT IN MAGENTA
+        float scTint = stormCurve; // 0 = no storm, 1 = max storm
+        color.rgb = mix(color.rgb, vec3(1.0, 0.0, 1.0), scTint);
     }
     #endif
+
 
     /* DRAWBUFFERS:06 */
     gl_FragData[0] = color;

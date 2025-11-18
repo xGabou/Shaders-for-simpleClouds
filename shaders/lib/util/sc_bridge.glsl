@@ -16,7 +16,7 @@
         vec4 Get_SC_StateSafe() {
             vec4 state = clamp(sc_State, vec4(0.0), vec4(1.0));
             float availability = smoothstep(0.0001, 0.0005, dot(state, vec4(1.0)));
-            vec4 fallback = vec4(1.0, 1.0, 0.0, 0.0);
+            vec4 fallback = vec4(0.0);
             return mix(fallback, state, availability);
         }
 

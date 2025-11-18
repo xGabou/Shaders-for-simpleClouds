@@ -58,7 +58,7 @@
             finalSky = mix(finalSky * 3.0, waterFogColor, VdotUmax0M);
 
         // Sun/Moon Glare
-        if (doGlare) {
+        if (false /* doGlare */) {
             if (0.0 < VdotSML) {
                 float glareScatter = 4.0 * (2.0 - clamp01(VdotS * 1000.0));
                 float VdotSM4 = pow(abs(VdotS), glareScatter);
@@ -80,21 +80,24 @@
         #ifdef USE_SC
         {
             float stormRaw = clamp(scStormDark, 0.0, 1.0);
-            // DEBUG: force color if SC is running
-            // calms storms below real cumulonimbus size
+
             float stormNorm  = clamp(stormRaw / 0.6, 0.0, 1.0);
             float stormCurve = pow(stormNorm, 1.4);
 
-            // thickness helps remove “white ring”
             float thick = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
             float thickCurve = mix(1.0, 0.65, thick);
 
-            // final multiplier
             float darkMult = mix(1.0, 0.35, stormCurve) * thickCurve;
 
             finalSky *= darkMult;
+
+            // remove ALL white glare if storm is strong
+            if (stormRaw > 0.5) {
+                finalSky = min(finalSky, vec3(0.35));
+            }
         }
         #endif
+
         /* ===== END SKY DARKENING ===== */
 
 

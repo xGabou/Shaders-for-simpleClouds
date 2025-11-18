@@ -212,20 +212,37 @@
             #ifdef MOON_PHASE_INF_ATMOSPHERE
                 fogColorM *= moonPhaseInfluence;
             #endif
-            #ifdef USE_SC
+           #ifdef USE_SC
             {
-                float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-                float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+                float storm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
 
-                // Stronger curve = realistic storm blackout
+                // Base storm curve
                 float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
                 float stormCurve = pow(stormNorm, 1.25);
+                float thick      = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+                float thickMult  = mix(1.0, 0.70, thick);
 
-                // Dim fog INTENSITY, not just fog color
-                float fogStrengthDim = mix(1.0, 0.45, stormCurve);
-                fog *= fogStrengthDim;
+                // Default SC dimming (kept)
+                float dim = mix(1.0, 0.50, stormCurve) * thickMult;
+
+                fogColorM *= dim;
+
+                // *** NEW ***
+                // Hard storm color override:
+                // storm > 0.3 → dark gray
+                // storm > 0.5 → black
+                float darkGrayMask = smoothstep(0.30, 0.50, storm);
+                float blackMask    = smoothstep(0.50, 0.70, storm);
+
+                // Dark gray target
+                vec3 darkGray = vec3(0.12);
+
+                // Blend:
+                fogColorM = mix(fogColorM, darkGray, darkGrayMask);
+                fogColorM = mix(fogColorM, vec3(0.0),  blackMask);
             }
             #endif
+
 
             color = mix(color, fogColorM, fog);
         }

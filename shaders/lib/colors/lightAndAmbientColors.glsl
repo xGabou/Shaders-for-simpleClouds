@@ -67,10 +67,9 @@
         vec3 baseLightColor   = mix(clearLightColor, rainLightColor, rainFactor);
         vec3 baseAmbientColor = mix(clearAmbientColor, rainAmbientColor, rainFactor);
 
-        float scThicknessScale = Get_SC_ThicknessScale();
-        float thicknessMask = clamp(scThicknessScale - 0.5, 0.0, 1.0);
-        float lightThicknessBoost = mix(0.85, 1.15, thicknessMask);
-        float ambientThicknessBoost = mix(0.9, 1.1, thicknessMask);
+        float thicknessMask = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+        float lightThicknessBoost = mix(1.0, 0.85, thicknessMask);
+        float ambientThicknessBoost = mix(1.0, 0.9, thicknessMask);
 
         #ifdef USE_SC
             float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);

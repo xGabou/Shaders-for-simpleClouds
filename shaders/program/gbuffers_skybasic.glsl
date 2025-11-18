@@ -116,6 +116,24 @@ void main() {
                     sunMoonMixer *= 1.0 - rainFactor2;
                 #endif
 
+                #ifdef USE_SC
+                {
+                    float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+                    float thickRaw = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+
+                    float stormNorm  = clamp(stormRaw / 0.6, 0.0, 1.0);
+                    float stormCurve = pow(stormNorm, 1.35);
+                    float thickCurve = pow(thickRaw, 1.15);
+                    float scBlock    = clamp(stormCurve * 0.95 + thickCurve * 0.75, 0.0, 1.0);
+
+                    sunMoonMixer *= 1.0 - scBlock;
+                }
+                #endif
+
+                if (isEyeInWater == 1) {
+                    sunMoonMixer = 0.0;
+                }
+
                 if (VdotS > 0.0) {
                     sunMoonMixer = pow2(sunMoonMixer) * GetHorizonFactor(SdotU);
 

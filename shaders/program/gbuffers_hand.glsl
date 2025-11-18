@@ -168,8 +168,8 @@ void main() {
     #ifdef USE_SC
     {
         float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-        float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
-        float stormCurve = pow(stormN, 2.4);
+        float stormN = clamp(stormRaw/2, 0.0, 1.0);
+        float stormCurve = pow(stormN, 1.1);
 
         float scDarkFactor = mix(1.0, 0.22, stormCurve);
         color.rgb *= scDarkFactor;

@@ -60,7 +60,11 @@
     vec3 _sunsetUpSkyColor     = skyColorM2 * (vec3(0.8, 0.58, 0.58) + vec3(0.1, 0.2, 0.35) * rainFactor2);
     vec3 _sunsetMiddleSkyColor = skyColorM2 * (vec3(1.8, 1.3, 1.2) + vec3(0.15, 0.25, -0.05) * rainFactor2);
     vec3 _sunsetDownSkyColorP  = vec3(1.45, 0.86, 0.5) - vec3(0.8, 0.3, 0.0) * rainFactor;
-    vec3 _sunsetDownSkyColor   = _sunsetDownSkyColorP * 0.5 + 0.25 * _sunsetMiddleSkyColor;
+
+    vec3 sunsetDownSkyColorP   = _sunsetDownSkyColorP;
+
+    vec3 _sunsetDownSkyColor   = (_sunsetDownSkyColorP * 0.5 + 0.25 * _sunsetMiddleSkyColor) * stormDarkHorizon;
+
 
     vec3 _dayUpSkyColor     = mix(_noonUpSkyColor, _sunsetUpSkyColor, invNoonFactor2);
     vec3 _dayMiddleSkyColor = mix(_noonMiddleSkyColor, _sunsetMiddleSkyColor, invNoonFactor2);
@@ -73,7 +77,7 @@
 
 
     //-------------------------------------------------
-    // FINAL VALUES (storm darkening baked ON THE SAME LINE)
+    // FINAL VALUES
     //-------------------------------------------------
 
     vec3 noonUpSkyColor       = _noonUpSkyColor * stormSunOcclusion;

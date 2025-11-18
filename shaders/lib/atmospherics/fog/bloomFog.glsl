@@ -1,7 +1,7 @@
 #ifdef CAVE_FOG
     #include "/lib/atmospherics/fog/caveFactor.glsl"
 #endif
-
+#include "/lib/util/sc_bridge.glsl"
 const float rainBloomAdd   = 8.0;
 const float nightBloomAdd  = 3.0;
 const float caveBloomAdd   = 14.0;

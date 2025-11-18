@@ -9,6 +9,9 @@
   -> -> -> DO NOT CHANGE ANYTHING UNLESS YOU KNOW WHAT YOU ARE DOING
   -> -> -> DO NOT EXPECT SUPPORT AFTER MODIFYING SHADER FILES
 ---------------------------------------------------------------------*/
+#ifndef USE_SC
+    #define USE_SC 1
+#endif
 
 //User Settings//
     #define SHADER_STYLE 1 //[1 4]

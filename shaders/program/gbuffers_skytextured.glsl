@@ -4,6 +4,7 @@
 
 //Common//
 #include "/lib/common.glsl"
+#include "/lib/util/sc_bridge.glsl"
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
@@ -20,9 +21,18 @@ flat in vec4 glColor;
 
 //Common Variables//
 #ifdef OVERWORLD
+
     float SdotU = dot(sunVec, upVec);
-    float sunVisibility = clamp(SdotU + 0.0625, 0.0, 0.125) / 0.125;
-    float sunVisibility2 = sunVisibility * sunVisibility;
+    #ifdef USE_SC
+        float scDark = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+        float scMask = 1.0 - smoothstep(0.15, 0.35, scDark);
+        float sunVisibility  = clamp(SdotU + 0.0625, 0.0, 0.125) / 0.125*scMask;
+        float sunVisibility2 = sunVisibility * sunVisibility * scMask;
+    #else
+        float sunVisibility = clamp(SdotU + 0.0625, 0.0, 0.125) / 0.125;
+        float sunVisibility2 = sunVisibility * sunVisibility;
+    #endif
+
 #endif
 
 //Common Functions//

@@ -263,18 +263,29 @@ void main() {
     {
         float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
 
-        // 0.6 = cumulonimbus reference level
-        float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
+        // 0.6 = seuil cumulonimbus
+        float s = clamp(stormRaw / 0.6, 0.0, 1.0);
 
-        // Smooth curve so weak storms dont overdarken
-        float stormCurve = pow(stormN, 1.8);
+        // Courbe douce : évite d’écraser les faibles pluies
+        float curve = pow(s, 1.5);
 
-        // Water should get darker, but not black
-        float scDarkFactor = mix(1.0, 0.42, stormCurve);
+        // Teinte bleu-orage : jamais noir, jamais blanc
+        vec3 stormTint = mix(
+            vec3(1.0, 1.0, 1.0),   // eau normale
+            vec3(0.40, 0.55, 0.80), // bleu-orages profond
+            curve
+        );
 
-        color.rgb *= scDarkFactor;
+        // Application
+        color.rgb *= stormTint;
+        translucentMult.rgb *= stormTint;
+
+        // Alpha boost (pluie brillante)
+        float scAlphaBoost = mix(1.0, 1.65, curve);
+        color.a = clamp(color.a * scAlphaBoost, 0.0, 1.0);
     }
     #endif
+
 
 
     /* DRAWBUFFERS:03 */

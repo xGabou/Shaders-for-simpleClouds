@@ -1,11 +1,7 @@
 //Lighting Includes//
-#ifdef USE_SC
-uniform float scCloudStormDark;
-uniform float scCloudThickness;
-#endif
-
 #include "/lib/colors/lightAndAmbientColors.glsl"
 #include "/lib/lighting/ggx.glsl"
+#include "/lib/util/sc_bridge.glsl"
 
 #if SHADOW_QUALITY > -1 && (defined OVERWORLD || defined END)
     #include "/lib/lighting/shadowSampling.glsl"
@@ -509,16 +505,16 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
             float rainLF = 0.1 * rainFactor;
             float lightFogTweaks = 1.0 + max0(96.0 - lViewPos) * (0.002 * (1.0 - sunVisibility2) + 0.0104 * rainLF) - rainLF;
             // --- SimpleClouds attenuation for ground brightness ---
-            // #ifdef USE_SC
-            // {
-            //     float scDark  = mix(1.0, 0.40, scCloudStormDark);    // storm dim
-            //     float scThick = mix(1.0, 0.70, scCloudThickness);    // thickness dim
-            //     float scFactor = scDark * scThick;
+            #ifdef USE_SC
+            {
+                float scDark  = mix(1.0, 0.40, Get_SC_StormDarkness());    // storm dim
+                float scThick = mix(1.0, 0.70, Get_SC_ThicknessRaw());    // thickness dim
+                float scFactor = scDark * scThick;
 
-            //     // Clamp the re-brightening effect
-            //     lightFogTweaks *= scFactor;
-            // }
-            // #endif
+                // Clamp the re-brightening effect
+                lightFogTweaks *= scFactor;
+            }
+            #endif
             ambientMult *= lightFogTweaks;
             lightColorM *= lightFogTweaks;
         }
@@ -574,23 +570,23 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
         lightColorM = lightColorM * 0.3;
     #endif
     // ===== SimpleClouds global light attenuation =====
-    // #ifdef USE_SC  // optional, remove if not needed
-    //     // How dark storms are allowed to go
-    //     float scDark = mix(1.0, 0.45, scCloudStormDark);
+    #ifdef USE_SC  // optional, remove if not needed
+        // How dark storms are allowed to go
+        float scDark = mix(1.0, 0.45, Get_SC_StormDarkness());
 
-    //     // How much thick clouds dim skylight
-    //     float scThick = mix(1.0, 0.65, scCloudThickness);
+        // How much thick clouds dim skylight
+        float scThick = mix(1.0, 0.65, Get_SC_ThicknessRaw());
 
-    //     // Combine
-    //     float scLightFactor = scDark * scThick;
+        // Combine
+        float scLightFactor = scDark * scThick;
 
-    //     // Apply to all lighting components BEFORE mixing
-    //     ambientColorM   *= scLightFactor;
-    //     lightColorM     *= scLightFactor;
+        // Apply to all lighting components BEFORE mixing
+        ambientColorM   *= scLightFactor;
+        lightColorM     *= scLightFactor;
 
-    //     // This one is CRITICAL: dims skylight properly
-    //     skyLightColor   *= scLightFactor;
-    // #endif
+        // This one is CRITICAL: dims skylight properly
+        // skyLightColor   *= scLightFactor;
+    #endif
 
     // Scene Lighting Stuff
     vec3 sceneLighting = lightColorM * shadowMult + ambientColorM * ambientMult;
@@ -675,18 +671,15 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
     color.rgb += lightHighlight;
     color.rgb *= pow2(1.0 - darknessLightFactor);
     // ===== SimpleClouds global post-light attenuation =====
-    // #ifdef USE_SC
-    // {
-    //     float scDark    = mix(1.0, 0.40, scCloudStormDark);
-    //     float scThick   = mix(1.0, 0.70, scCloudThickness);
-    //     float scFactor  = scDark * scThick;
+    #ifdef USE_SC
+    {
+        float scDark    = mix(1.0, 0.40, Get_SC_StormDarkness());
+        float scThick   = mix(1.0, 0.70, Get_SC_ThicknessRaw());
+        float scFactor  = scDark * scThick;
 
-    //     // Apply AFTER all Complementary lighting tweaks
-    //     color.rgb *= scFactor;
-
-    //     // Also darken horizon fog
-    //     fogColor *= scFactor;
-    // }
-    // #endif
+        // Apply AFTER all Complementary lighting tweaks
+        color.rgb *= scFactor;
+    }
+    #endif
 
 }

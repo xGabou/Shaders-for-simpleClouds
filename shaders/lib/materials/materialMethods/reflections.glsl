@@ -173,6 +173,27 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
                 vec3 skyReflection = GetLowQualitySky(RVdotU, RVdotS, dither, true, true);
             #endif
 
+            #ifdef USE_SC
+            {
+                float storm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+
+                // Base thresholds
+                float darkMask  = smoothstep(0.25, 0.45, storm); // begin darkening
+                float blackMask = smoothstep(0.55, 0.75, storm); // final blackout
+
+                // Color curve for correct blue-deep storm tone
+                vec3 stormDeepBlue = mix(vec3(0.35, 0.45, 0.65), vec3(0.10, 0.14, 0.22), darkMask);
+
+                // Apply darkening to sky reflection
+                skyReflection = mix(skyReflection, stormDeepBlue, darkMask);
+
+                // Above 0.55 we go near-black
+                skyReflection = mix(skyReflection, vec3(0.0), blackMask);
+            }
+            #endif
+
+
+
             #ifdef ATM_COLOR_MULTS
                 skyReflection *= atmColorMult;
             #endif
@@ -181,7 +202,15 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
             #endif
 
             #ifdef DEFERRED1
-                skyReflection *= skyLightFactor;
+                #ifdef USE_SC
+                    float storm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+                    float stormLightFade = 1.0 - smoothstep(0.20, 0.70, storm);
+                    float forcedSkyLight = skyLightFactor * stormLightFade;
+                #else
+                    float forcedSkyLight = skyLightFactor;
+                #endif
+
+                skyReflection *= forcedSkyLight;
             #else
                 float specularHighlight = GGX(normalM, nViewPos, lightVec, max(dot(normalM, lightVec), 0.0), smoothness);
                 skyReflection += specularHighlight * highlightColor * shadowMult * highlightMult * invRainFactor;

@@ -60,6 +60,15 @@ void main() {
         // Add a very mild thickness fading (prevent pure-black)
         scMult *= mix(1.0, 0.75, thick);
         lightRain *= scMult;
+
+        float scOpacity = mix(1.0, 2.2, stormCurve);
+        scOpacity *= mix(1.0, 1.25, thick);
+        color.a = clamp(color.a * scOpacity + stormCurve * 0.15, 0.0, 1.0);
+
+        // Hard-cap opacity during intense storms so sun discs can't show through
+        if (stormCurve > 0.55 || rainFactor > 0.85) {
+            color.a = 1.0;
+        }
     }
     #endif
 
