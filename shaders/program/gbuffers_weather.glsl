@@ -69,6 +69,11 @@ void main() {
         if (stormCurve > 0.55 || rainFactor > 0.85) {
             color.a = 1.0;
         }
+
+        // Keep precipitation lit even when the sky goes dark
+        float scCoverage = clamp(max(storm, thick), 0.0, 1.0);
+        vec3 scRainLift = mix(vec3(1.0), vec3(1.25, 1.3, 1.35), scCoverage);
+        lightRain *= scRainLift;
     }
     #endif
 

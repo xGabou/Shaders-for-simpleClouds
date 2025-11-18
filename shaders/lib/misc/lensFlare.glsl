@@ -78,6 +78,13 @@ void DoLensFlare(inout vec3 color, vec3 viewPos, float dither) {
     #else
         flareFactor *= 1.0 - rainFactor;
     #endif
+    #ifdef USE_SC
+    {
+        float scCoverage = clamp(max(Get_SC_StormDarkness(), Get_SC_ThicknessRaw()), 0.0, 1.0);
+        float scFade = smoothstep(0.05, 0.3, scCoverage);
+        flareFactor *= 1.0 - scFade;
+    }
+    #endif
 
     vec3 flare = (
         BaseLens(lightPos, 0.3, -0.45, 1.0) * vec3(2.2, 1.2, 0.1) * 0.07 +
