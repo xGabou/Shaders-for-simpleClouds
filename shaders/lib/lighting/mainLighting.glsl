@@ -583,15 +583,14 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
         // Combine
         float scLightFactor = scDark * scThick;
         #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
-            scLightFactor = max(scLightFactor, 0.97);
+            scLightFactor = 1.0;
         #endif
 
         // Apply to all lighting components BEFORE mixing
         ambientColorM   *= scLightFactor;
         lightColorM     *= scLightFactor;
 
-        // This one is CRITICAL: dims skylight properly
-        // skyLightColor   *= scLightFactor;
+        // Sky lighting is already represented through ambient/light mixes.
     #endif
 
     // Scene Lighting Stuff
@@ -684,7 +683,7 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
         float scFactor  = scDark * scThick;
 
         #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
-            scFactor = max(scFactor, 0.92);
+            scFactor = 1.0;
         #else
             scFactor = max(scFactor, 0.70);
         #endif

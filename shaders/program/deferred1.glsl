@@ -36,13 +36,19 @@ vec2 view = vec2(viewWidth, viewHeight);
 #ifdef OVERWORLD
     #ifdef USE_SC
         float scStorm     = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
-        float scStormCurve = pow(scStorm, 1.2);
-        float scThick      = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
-        float scThickCurve = pow(scThick, 1.1);
-        float scSkyDim = mix(1.0, 0.45, scStormCurve) * mix(1.0, 0.7, scThickCurve);
-    #endif
+        float scThick     = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+        float scCoverage  = clamp(max(scStorm, scThick), 0.0, 1.0);
+        float scSkyFade   = smoothstep(0.05, 0.55, scCoverage);
+        float scSceneFade = smoothstep(0.08, 0.70, scCoverage);
+        float scSkyDim    = mix(1.0, 0.03, scSkyFade);
+        float scSceneDim  = mix(1.0, 0.12, scSceneFade);
     #else
-        float scSkyDim = 1.0;
+        float scSkyDim   = 1.0;
+        float scSceneDim = 1.0;
+    #endif
+#else
+    float scSkyDim   = 1.0;
+    float scSceneDim = 1.0;
 #endif
 
 #ifdef OVERWORLD
@@ -422,6 +428,24 @@ void main() {
         #endif
 
         DoFog(color, skyFade, lViewPos, playerPos, VdotU, VdotS, dither);
+        #ifdef OVERWORLD
+            float scStorm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+            float scThick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+            float scCoverage = clamp(max(scStorm, scThick), 0.0, 1.0);
+            float scCloudShadow = smoothstep(0.25, 0.85, scCoverage);
+
+            vec3 worldPos = cameraPosition + playerPos;
+            float lightningPresence = step(0.5, lightningBoltPosition.w);
+            float lightningDistance = length(lightningBoltPosition.xyz - worldPos);
+            float lightningReach = 1.0 - smoothstep(40.0, 200.0, lightningDistance);
+            float lightningFlash = lightningPresence * lightningReach * smoothstep(0.4, 0.95, rainStrength);
+
+            color *= mix(vec3(1.0), vec3(0.3, 0.33, 0.38), scCloudShadow);
+            color += lightningFlash * vec3(0.6, 0.7, 0.9);
+
+            waterRefColor *= mix(1.0, 0.25, scCloudShadow);
+            waterRefColor += lightningFlash * vec3(0.45, 0.55, 0.7);
+        #endif
     } else { // Sky
         #ifdef DISTANT_HORIZONS
             float z0DH = texelFetch(dhDepthTex, texelCoord, 0).r;

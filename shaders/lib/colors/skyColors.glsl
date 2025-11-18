@@ -14,7 +14,9 @@
 
     float stormDarkSky      = mix(1.0, 0.28, scStormDark);
     float stormDarkHorizon  = mix(1.0, 0.42, scStormDark * 1.15);
-    float stormSunOcclusion = mix(1.0, 0.18, scStormDark * scThickness);
+    float stormCoverage     = clamp(scStormDark * scThickness, 0.0, 1.0);
+    float stormSunFade      = smoothstep(0.08, 0.6, stormCoverage);
+    float stormSunOcclusion = mix(1.0, 0.04, stormSunFade);
 
     vec3 scStormTint = mix(vec3(1.0), vec3(0.6, 0.64, 0.72), scStormDark);
     float scStormBrightness = mix(1.0, 0.55, scStormDark);

@@ -138,17 +138,21 @@ vec4 GetVolumetricClouds(int cloudAltitude, float distanceThreshold, inout float
             #endif
             float skyMult1 = 1.0 - 0.2 * (1.0 - skyFade) * max(sunVisibility2, nightFactor);
             float skyMult2 = 1.0 - 0.33333 * skyFade;
-            colorSample = mix(cloudSkyColor, colorSample * skyMult1, cloudFogFactor * skyMult2);
+            float fogMixBase = clamp(cloudFogFactor * skyMult2, 0.0, 1.0);
+            float scCoverage = clamp(max(Get_SC_StormDarkness(), Get_SC_ThicknessRaw()), 0.0, 1.0);
+            float fogMask = 1.0 - pow(scCoverage, 0.6);
+            float fogMix = clamp(fogMixBase * fogMask, 0.0, 1.0);
+            colorSample = mix(cloudSkyColor, colorSample * skyMult1, fogMix);
            // Apply SC storm + thickness darkening AFTER Complementary shading
-            float scDark = mix(1.0, 0.45, Get_SC_StormDarkness());        // storm dim
-            float scThickDark = mix(1.0, 0.60, Get_SC_ThicknessRaw());   // thicker = darker
+            float scDark = mix(1.0, 0.65, Get_SC_StormDarkness());        // storm dim
+            float scThickDark = mix(1.0, 0.85, Get_SC_ThicknessRaw());   // thicker = darker
 
             colorSample *= scDark;
             colorSample *= scThickDark;
 
             // also darken density so underside stops glowing
-            float densityDark = mix(1.0, 0.55, Get_SC_StormDarkness());
-            float densityThick = mix(1.0, 0.70, Get_SC_ThicknessRaw());
+            float densityDark = mix(1.0, 0.75, Get_SC_StormDarkness());
+            float densityThick = mix(1.0, 0.88, Get_SC_ThicknessRaw());
 
 
             colorSample *= pow2(1.0 - maxBlindnessDarkness);

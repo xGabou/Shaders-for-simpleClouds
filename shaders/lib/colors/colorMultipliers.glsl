@@ -18,16 +18,20 @@ vec3 GetLightColorMult() {
         baseMult = mix(baseMult, rainTint, rainFactor);
 
         #ifdef USE_SC
-            float storm     = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-            float thick     = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+            #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
+                // Entities keep their original multipliers to avoid "dark mode".
+            #else
+                float storm     = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+                float thick     = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
 
-            float stormNorm = clamp(storm / 0.6, 0.0, 1.0);
-            float stormC    = pow(stormNorm, 1.45);
+                float stormNorm = clamp(storm / 0.6, 0.0, 1.0);
+                float stormC    = pow(stormNorm, 1.45);
 
-            float multDim   = mix(1.0, 0.32, stormC);
-            float thickDim  = mix(1.0, 0.70, thick);
+                float multDim   = mix(1.0, 0.32, stormC);
+                float thickDim  = mix(1.0, 0.70, thick);
 
-            baseMult = baseMult * multDim * thickDim;
+                baseMult = baseMult * multDim * thickDim;
+            #endif
         #endif
 
         return baseMult;
@@ -56,16 +60,20 @@ vec3 GetAtmColorMult() {
         baseMult = mix(baseMult, rainTint, rainFactor);
 
         #ifdef USE_SC
-            float storm     = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-            float thick     = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+            #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
+                // Keep ambient tint intact for entity-style passes.
+            #else
+                float storm     = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+                float thick     = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
 
-            float stormNorm = clamp(storm / 0.6, 0.0, 1.0);
-            float stormC    = pow(stormNorm, 1.25);
+                float stormNorm = clamp(storm / 0.6, 0.0, 1.0);
+                float stormC    = pow(stormNorm, 1.25);
 
-            float multDim   = mix(1.0, 0.45, stormC);
-            float thickDim  = mix(1.0, 0.80, thick);
+                float multDim   = mix(1.0, 0.45, stormC);
+                float thickDim  = mix(1.0, 0.80, thick);
 
-            baseMult = baseMult * multDim * thickDim;
+                baseMult = baseMult * multDim * thickDim;
+            #endif
         #endif
 
         return baseMult;

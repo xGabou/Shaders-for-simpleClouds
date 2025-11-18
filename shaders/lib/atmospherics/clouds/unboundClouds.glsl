@@ -210,7 +210,11 @@ vec4 GetVolumetricClouds(int cloudAltitude, float distanceThreshold, inout float
             #endif
             float skyMult1 = 1.0 - 0.2 * (1.0 - skyFade) * max(sunVisibility2, nightFactor);
             float skyMult2 = 1.0 - 0.33333 * skyFade;
-            colorSample = mix(cloudSkyColor, colorSample * skyMult1, cloudFogFactor * skyMult2 * 0.72);
+            float fogMixBase = clamp(cloudFogFactor * skyMult2 * 0.72, 0.0, 1.0);
+            float scCoverage = clamp(max(Get_SC_StormDarkness(), Get_SC_ThicknessRaw()), 0.0, 1.0);
+            float fogMask = 1.0 - pow(scCoverage, 0.6);
+            float fogMix = clamp(fogMixBase * fogMask, 0.0, 1.0);
+            colorSample = mix(cloudSkyColor, colorSample * skyMult1, fogMix);
             colorSample *= pow2(1.0 - maxBlindnessDarkness);
 
             volumetricClouds.rgb = mix(volumetricClouds.rgb, colorSample, 1.0 - min1(volumetricClouds.a));

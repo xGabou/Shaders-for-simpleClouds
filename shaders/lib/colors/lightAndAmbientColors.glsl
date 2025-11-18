@@ -72,34 +72,39 @@
         float ambientThicknessBoost = mix(1.0, 0.9, thicknessMask);
 
         #ifdef USE_SC
-            float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-            float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+            #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
+                vec3 lightColor   = baseLightColor * lightThicknessBoost;
+                vec3 ambientColor = baseAmbientColor * ambientThicknessBoost;
+            #else
+                float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+                float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
 
-            // Better storm normalization (cumulonimbus reference = 0.6)
-            float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
-            float stormCurve = pow(stormNorm, 1.45);
+                // Better storm normalization (cumulonimbus reference = 0.6)
+                float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
+                float stormCurve = pow(stormNorm, 1.45);
 
-            // Stronger but natural light dimming
-            float lightDim   = mix(1.0, 0.28, stormCurve);
-            float ambientDim = mix(1.0, 0.40, stormCurve);
+                // Stronger but natural light dimming
+                float lightDim   = mix(1.0, 0.28, stormCurve);
+                float ambientDim = mix(1.0, 0.40, stormCurve);
 
-            // Thickness adds even more occlusion
-            float thickDimLight   = mix(1.0, 0.70, thick);
-            float thickDimAmbient = mix(1.0, 0.80, thick);
+                // Thickness adds even more occlusion
+                float thickDimLight   = mix(1.0, 0.70, thick);
+                float thickDimAmbient = mix(1.0, 0.80, thick);
 
-            vec3 lightColor =
-                baseLightColor
-                * mix(1.0, 0.45, scStormDark)
-                * lightThicknessBoost
-                * lightDim
-                * thickDimLight;
+                vec3 lightColor =
+                    baseLightColor
+                    * mix(1.0, 0.45, scStormDark)
+                    * lightThicknessBoost
+                    * lightDim
+                    * thickDimLight;
 
-            vec3 ambientColor =
-                baseAmbientColor
-                * mix(1.0, 0.7, scStormDark)
-                * ambientThicknessBoost
-                * ambientDim
-                * thickDimAmbient;
+                vec3 ambientColor =
+                    baseAmbientColor
+                    * mix(1.0, 0.7, scStormDark)
+                    * ambientThicknessBoost
+                    * ambientDim
+                    * thickDimAmbient;
+            #endif
         #else
             vec3 lightColor   = baseLightColor * mix(1.0, 0.45, scStormDark) * lightThicknessBoost;
             vec3 ambientColor = baseAmbientColor * mix(1.0, 0.7, scStormDark) * ambientThicknessBoost;
