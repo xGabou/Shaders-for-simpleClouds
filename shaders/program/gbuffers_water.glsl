@@ -262,26 +262,8 @@ void main() {
     #ifdef USE_SC
     {
         float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-
-        // 0.6 = seuil cumulonimbus
-        float s = clamp(stormRaw / 0.6, 0.0, 1.0);
-
-        // Courbe douce : évite d’écraser les faibles pluies
-        float curve = pow(s, 1.5);
-
-        // Teinte bleu-orage : jamais noir, jamais blanc
-        vec3 stormTint = mix(
-            vec3(1.0, 1.0, 1.0),   // eau normale
-            vec3(0.40, 0.55, 0.80), // bleu-orages profond
-            curve
-        );
-
-        // Application
-        color.rgb *= stormTint;
-        translucentMult.rgb *= stormTint;
-
-        // Alpha boost (pluie brillante)
-        float scAlphaBoost = mix(1.0, 1.65, curve);
+        float stormCurve = pow(clamp(stormRaw / 0.6, 0.0, 1.0), 1.5);
+        float scAlphaBoost = mix(1.0, 1.65, stormCurve);
         color.a = clamp(color.a * scAlphaBoost, 0.0, 1.0);
     }
     #endif

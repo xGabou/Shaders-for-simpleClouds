@@ -125,6 +125,7 @@ void DoOceanBlockTweaks(inout float smoothnessD) {
 
 //Includes//
 #include "/lib/util/spaceConversion.glsl"
+#define APPLY_SC_CLOUD_SHADOWS
 #include "/lib/lighting/mainLighting.glsl"
 #include "/lib/util/dither.glsl"
 
@@ -349,12 +350,15 @@ void main() {
 
     #ifdef USE_SC
     {
-        float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-        float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
-        float stormCurve = pow(stormN, 2.5);
-        float scDarkFactor = mix(1.0, 0.20, stormCurve);
+        float scStorm     = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
+        float scStormCurve = pow(scStorm, 1.35);
+        float scThick      = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+        float scThickCurve = pow(scThick, 1.2);
 
-        color.rgb *= scDarkFactor;    // dim final terrain brightness
+        float scDarkFactor = mix(1.0, 0.2, scStormCurve);
+        scDarkFactor *= mix(1.0, 0.75, scThickCurve);
+
+        color.rgb *= scDarkFactor;
     }
     #endif
 

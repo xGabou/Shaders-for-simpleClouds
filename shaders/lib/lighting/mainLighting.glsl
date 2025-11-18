@@ -507,12 +507,11 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
             // --- SimpleClouds attenuation for ground brightness ---
             #ifdef USE_SC
             {
-                float scDark  = mix(1.0, 0.40, Get_SC_StormDarkness());    // storm dim
-                float scThick = mix(1.0, 0.70, Get_SC_ThicknessRaw());    // thickness dim
-                float scFactor = scDark * scThick;
+                float scCoverage = max(Get_SC_StormDarkness(), Get_SC_ThicknessRaw());
+                float shadowAdv = clamp(scCoverage, 0.0, 1.0);
 
-                // Clamp the re-brightening effect
-                lightFogTweaks *= scFactor;
+                // Hard stop direct sun when coverage is near 1
+                lightFogTweaks *= 1.0 - shadowAdv * 0.9;
             }
             #endif
             ambientMult *= lightFogTweaks;
@@ -569,6 +568,10 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
         ambientColorM = mix(ambientColorM, lightColorM, 0.25) * 1.5;
         lightColorM = lightColorM * 0.3;
     #endif
+    #if defined USE_SC && defined APPLY_SC_CLOUD_SHADOWS
+        float scDirShadow = clamp(1.0 - Get_SC_FinalShadow(), 0.1, 1.0);
+        shadowMult *= scDirShadow;
+    #endif
     // ===== SimpleClouds global light attenuation =====
     #ifdef USE_SC  // optional, remove if not needed
         // How dark storms are allowed to go
@@ -579,6 +582,9 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
 
         // Combine
         float scLightFactor = scDark * scThick;
+        #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
+            scLightFactor = max(scLightFactor, 0.97);
+        #endif
 
         // Apply to all lighting components BEFORE mixing
         ambientColorM   *= scLightFactor;
@@ -676,6 +682,12 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
         float scDark    = mix(1.0, 0.40, Get_SC_StormDarkness());
         float scThick   = mix(1.0, 0.70, Get_SC_ThicknessRaw());
         float scFactor  = scDark * scThick;
+
+        #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
+            scFactor = max(scFactor, 0.92);
+        #else
+            scFactor = max(scFactor, 0.70);
+        #endif
 
         // Apply AFTER all Complementary lighting tweaks
         color.rgb *= scFactor;

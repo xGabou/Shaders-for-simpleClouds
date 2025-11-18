@@ -187,7 +187,8 @@ void main() {
         float stormCurve = pow(stormN, 2.2);
 
         // Particles must stay visible → keep a minimum
-        float scDarkFactor = mix(1.0, 0.35, stormCurve);
+        float scDarkFactor = mix(1.0, 0.80, stormCurve);
+        scDarkFactor = max(scDarkFactor, 0.8);
 
         // Apply to RGB, not alpha
         color.rgb *= scDarkFactor;

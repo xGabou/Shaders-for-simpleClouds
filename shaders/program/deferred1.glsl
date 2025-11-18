@@ -3,7 +3,9 @@
 /////////////////////////////////////
 
 //Common//
+#include "/lib/util/sc_bridge.glsl"
 #include "/lib/common.glsl"
+
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
@@ -30,6 +32,18 @@ float shadowTime = shadowTimeVar2 * shadowTimeVar2;
 float farMinusNear = far - near;
 
 vec2 view = vec2(viewWidth, viewHeight);
+
+#ifdef OVERWORLD
+    #ifdef USE_SC
+        float scStorm     = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
+        float scStormCurve = pow(scStorm, 1.2);
+        float scThick      = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+        float scThickCurve = pow(scThick, 1.1);
+        float scSkyDim = mix(1.0, 0.45, scStormCurve) * mix(1.0, 0.7, scThickCurve);
+    #endif
+    #else
+        float scSkyDim = 1.0;
+#endif
 
 #ifdef OVERWORLD
     vec3 lightVec = sunVec * ((timeAngle < 0.5325 || timeAngle > 0.9675) ? 1.0 : -1.0);
@@ -439,6 +453,7 @@ void main() {
                 nightNebula += GetNightNebula(viewPos.xyz, VdotU, VdotS);
                 color.rgb += nightNebula;
             #endif
+            color.rgb *= scSkyDim;
         #endif
         #ifdef NETHER
             color.rgb = netherColor * (1.0 - maxBlindnessDarkness);
@@ -472,6 +487,9 @@ void main() {
             clouds = GetClouds(cloudLinearDepth, skyFade, cameraPosition, playerPos,
                                lViewPos, VdotS, VdotU, dither, auroraBorealis, nightNebula);
 
+            #ifdef OVERWORLD
+                clouds.rgb *= scSkyDim;
+            #endif
             color = mix(color, clouds.rgb, clouds.a);
         }
     #endif
@@ -479,6 +497,9 @@ void main() {
     #ifdef SKY_EFFECT_REFLECTION
         waterRefColor = mix(waterRefColor, clouds.rgb, clouds.a);
         waterRefColor = sqrt(waterRefColor) - 1.0;
+        #ifdef OVERWORLD
+            waterRefColor *= scSkyDim;
+        #endif
     #endif
 
     #if defined LIGHTSHAFTS_ACTIVE && (LIGHTSHAFT_BEHAVIOUR == 1 && SHADOW_QUALITY >= 1 || defined END)
@@ -495,7 +516,9 @@ void main() {
         #else
             float factor = max(inSnowy, inDry);
         #endif
-
+        #ifdef OVERWORLD
+            atmFogColor *= scSkyDim;
+        #endif
         color = mix(color, atmFogColor, 0.5 * rainFactor * factor * sqrt1(skyFade));
     #endif
 

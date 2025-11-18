@@ -171,7 +171,8 @@ void main() {
         float stormN = clamp(stormRaw/2, 0.0, 1.0);
         float stormCurve = pow(stormN, 1.1);
 
-        float scDarkFactor = mix(1.0, 0.22, stormCurve);
+        float scDarkFactor = mix(1.0, 0.78, stormCurve);
+        scDarkFactor = max(scDarkFactor, 0.78);
         color.rgb *= scDarkFactor;
     }
     #endif

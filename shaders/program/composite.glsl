@@ -203,12 +203,15 @@ void main() {
     color = pow(color, vec3(2.2));
     #ifdef USE_SC
     {
-        float scDark  = mix(1.0, 0.40, Get_SC_StormDarkness());
-        float scThick = mix(1.0, 0.70, Get_SC_ThicknessRaw());
-        float scFactor = scDark * scThick;
+        float scStorm      = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
+        float scStormCurve = pow(scStorm, 1.25);
+        float scThick      = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+        float scThickCurve = pow(scThick, 1.15);
 
-        // Global world darkening
-        color *= scFactor;
+        float scExposure = mix(1.0, 0.35, scStormCurve);
+        scExposure *= mix(1.0, 0.65, scThickCurve);
+
+        color *= scExposure;
     }
     #endif
 

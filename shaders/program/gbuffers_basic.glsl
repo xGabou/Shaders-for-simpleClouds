@@ -42,6 +42,7 @@ float shadowTime = shadowTimeVar2 * shadowTimeVar2;
 
 //Includes//
 #include "/lib/util/spaceConversion.glsl"
+#define APPLY_SC_CLOUD_SHADOWS
 #include "/lib/lighting/mainLighting.glsl"
 
 #ifdef TAA
@@ -115,11 +116,13 @@ void main() {
 
     #ifdef USE_SC
     {
-        float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-        float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
-        float stormCurve = pow(stormN, 2.5);
+        float scStorm      = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
+        float scStormCurve = pow(scStorm, 1.25);
+        float scThick      = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+        float scThickCurve = pow(scThick, 1.15);
 
-        float scDarkFactor = mix(1.0, 0.15, stormCurve);
+        float scDarkFactor = mix(1.0, 0.15, scStormCurve);
+        scDarkFactor *= mix(1.0, 0.7, scThickCurve);
 
         color.rgb *= scDarkFactor;
     }

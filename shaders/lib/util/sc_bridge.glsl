@@ -11,6 +11,7 @@
             #define SC_UNIFORMS_DECLARED
             uniform vec4 sc_State;
             uniform vec4 sc_Type;
+            uniform float sc_CloudShadowFactor;
         #endif
 
         vec4 Get_SC_StateSafe() {
@@ -59,8 +60,31 @@
             );
             return dot(mask, shadedVariants);
         }
+        float Get_SC_ShadowStrength() {
+            // storm darkness is too weak — we need actual cloud optical depth
+            float thick = Get_SC_ThicknessRaw();     // raw cloud thickness
+            float storm = Get_SC_StormDarkness();    // smooth intensity
 
-    #else
+            // cloud coverage approximation
+            float coverage = clamp(thick * 0.65 + storm * 0.45, 0.0, 1.0);
+
+            // convert to ground shadow darkness
+            float shadow = smoothstep(0.25, 0.85, coverage);
+
+            return shadow * 0.85; // never full black
+        }
+        float Get_SC_FinalShadow() {
+            // choose Java override if > 0
+            if (sc_CloudShadowFactor > 0.0) {
+                return clamp(sc_CloudShadowFactor, 0.0, 1.0);
+            }
+
+            // otherwise use shader-side estimation
+            return Get_SC_ShadowStrength();
+        }
+
+
+#else
 
         #define Get_SC_VisibilityFactor()      0.0
         #define Get_SC_ThicknessRaw()          0.0
