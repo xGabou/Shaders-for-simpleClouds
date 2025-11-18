@@ -4,7 +4,6 @@
 #ifdef MOON_PHASE_INF_ATMOSPHERE
     #include "/lib/colors/moonPhaseInfluence.glsl"
 #endif
-
 #ifdef BORDER_FOG
     #ifdef OVERWORLD
         #include "/lib/atmospherics/sky.glsl"
@@ -41,6 +40,23 @@
 
             #ifdef OVERWORLD
                 vec3 fogColorM = GetSky(VdotU, VdotS, dither, true, false);
+                #ifdef USE_SC
+                {
+                    float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+                    float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+
+                    // 0.6 = cumulonimbus reference
+                    float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
+                    float stormCurve = pow(stormNorm, 1.35);
+
+                    float darkMult = mix(1.0, 0.42, stormCurve);
+                    float thickMult = mix(1.0, 0.65, thick);
+
+                    fogColorM *= darkMult * thickMult;
+                }
+                #endif
+
+
             #elif defined NETHER
                 vec3 fogColorM = netherColor;
             #else
@@ -171,6 +187,21 @@
 
             #ifdef OVERWORLD
                 vec3 fogColorM = GetAtmFogColor(altitudeFactorRaw, VdotS);
+                #ifdef USE_SC
+                {
+                    float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+                    float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+
+                    float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
+                    float stormCurve = pow(stormNorm, 1.25);
+
+                    float darkMult = mix(1.0, 0.50, stormCurve);
+                    float thickMult = mix(1.0, 0.70, thick);
+
+                    fogColorM *= darkMult * thickMult;
+                }
+                #endif
+
             #else
                 vec3 fogColorM = endSkyColor * 1.5;
             #endif
@@ -180,6 +211,20 @@
             #endif
             #ifdef MOON_PHASE_INF_ATMOSPHERE
                 fogColorM *= moonPhaseInfluence;
+            #endif
+            #ifdef USE_SC
+            {
+                float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+                float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+
+                // Stronger curve = realistic storm blackout
+                float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
+                float stormCurve = pow(stormNorm, 1.25);
+
+                // Dim fog INTENSITY, not just fog color
+                float fogStrengthDim = mix(1.0, 0.45, stormCurve);
+                fog *= fogStrengthDim;
+            }
             #endif
 
             color = mix(color, fogColorM, fog);
@@ -255,4 +300,20 @@ void DoFog(inout vec3 color, inout float skyFade, float lViewPos, vec3 playerPos
 
     if (blindness > 0.00001) DoBlindnessFog(color, lViewPos);
     if (darknessFactor > 0.00001) DoDarknessFog(color, lViewPos);
+    // #ifdef USE_SC
+    // {
+    //     float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+    //     float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+
+    //     // 0.6 = cumulonimbus reference
+    //     float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
+    //     float stormCurve = pow(stormNorm, 1.35);
+
+    //     float darkMult = mix(1.0, 0.42, stormCurve);
+    //     float thickMult = mix(1.0, 0.65, thick);
+
+    //     fogColorM *= darkMult * thickMult;
+    // }
+    // #endif
+
 }

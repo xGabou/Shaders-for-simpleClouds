@@ -1,7 +1,7 @@
 #ifndef INCLUDE_LIGHT_AND_AMBIENT_COLORS
     #define INCLUDE_LIGHT_AND_AMBIENT_COLORS
 
-    #include "/lib/util/simpleCloudsBridge.glsl"
+    #include "/lib/util/sc_bridge.glsl"
 
     #if defined OVERWORLD
         #ifndef COMPOSITE
@@ -67,14 +67,46 @@
         vec3 baseLightColor   = mix(clearLightColor, rainLightColor, rainFactor);
         vec3 baseAmbientColor = mix(clearAmbientColor, rainAmbientColor, rainFactor);
 
-        float scStormDark = GetSimpleCloudStormDarkness();
-        float scThicknessScale = GetSimpleCloudThicknessScale();
+        float scThicknessScale = Get_SC_ThicknessScale();
         float thicknessMask = clamp(scThicknessScale - 0.5, 0.0, 1.0);
         float lightThicknessBoost = mix(0.85, 1.15, thicknessMask);
         float ambientThicknessBoost = mix(0.9, 1.1, thicknessMask);
 
-        vec3 lightColor   = baseLightColor * mix(1.0, 0.45, scStormDark) * lightThicknessBoost;
-        vec3 ambientColor = baseAmbientColor * mix(1.0, 0.7, scStormDark) * ambientThicknessBoost;
+        #ifdef USE_SC
+            float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+            float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+
+            // Better storm normalization (cumulonimbus reference = 0.6)
+            float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
+            float stormCurve = pow(stormNorm, 1.45);
+
+            // Stronger but natural light dimming
+            float lightDim   = mix(1.0, 0.28, stormCurve);
+            float ambientDim = mix(1.0, 0.40, stormCurve);
+
+            // Thickness adds even more occlusion
+            float thickDimLight   = mix(1.0, 0.70, thick);
+            float thickDimAmbient = mix(1.0, 0.80, thick);
+
+            vec3 lightColor =
+                baseLightColor
+                * mix(1.0, 0.45, scStormDark)
+                * lightThicknessBoost
+                * lightDim
+                * thickDimLight;
+
+            vec3 ambientColor =
+                baseAmbientColor
+                * mix(1.0, 0.7, scStormDark)
+                * ambientThicknessBoost
+                * ambientDim
+                * thickDimAmbient;
+        #else
+            vec3 lightColor   = baseLightColor * mix(1.0, 0.45, scStormDark) * lightThicknessBoost;
+            vec3 ambientColor = baseAmbientColor * mix(1.0, 0.7, scStormDark) * ambientThicknessBoost;
+        #endif
+
+
     #elif defined NETHER
         vec3 lightColor   = vec3(0.0);
         vec3 ambientColor = (netherColor + 0.5 * lavaLightColor) * (0.9 + 0.45 * vsBrightness);

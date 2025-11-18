@@ -259,6 +259,24 @@ void main() {
     DoFog(color.rgb, sky, lViewPos, playerPos, VdotU, VdotS, dither);
     color.a *= 1.0 - sky;
 
+    #ifdef USE_SC
+    {
+        float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+
+        // 0.6 = cumulonimbus reference level
+        float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
+
+        // Smooth curve so weak storms dont overdarken
+        float stormCurve = pow(stormN, 1.8);
+
+        // Water should get darker, but not black
+        float scDarkFactor = mix(1.0, 0.42, stormCurve);
+
+        color.rgb *= scDarkFactor;
+    }
+    #endif
+
+
     /* DRAWBUFFERS:03 */
     gl_FragData[0] = color;
     gl_FragData[1] = vec4(1.0 - translucentMult.rgb, translucentMult.a);

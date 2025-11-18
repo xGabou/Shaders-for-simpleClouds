@@ -347,6 +347,18 @@ void main() {
         ColorCodeProgram(color, mat);
     #endif
 
+    #ifdef USE_SC
+    {
+        float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+        float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
+        float stormCurve = pow(stormN, 2.5);
+        float scDarkFactor = mix(1.0, 0.20, stormCurve);
+
+        color.rgb *= scDarkFactor;    // dim final terrain brightness
+    }
+    #endif
+
+
     /* DRAWBUFFERS:06 */
     gl_FragData[0] = color;
     gl_FragData[1] = vec4(smoothnessD, materialMask, skyLightFactor, 1.0);

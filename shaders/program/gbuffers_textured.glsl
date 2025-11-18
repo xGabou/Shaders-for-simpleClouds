@@ -176,6 +176,24 @@ void main() {
     #ifdef COLOR_CODED_PROGRAMS
         ColorCodeProgram(color, -1);
     #endif
+    #ifdef USE_SC
+    {
+        float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+
+        // Normalize so 0.6 = cumulonimbus level
+        float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
+
+        // Smooth curve for better visual blending
+        float stormCurve = pow(stormN, 2.2);
+
+        // Particles must stay visible → keep a minimum
+        float scDarkFactor = mix(1.0, 0.35, stormCurve);
+
+        // Apply to RGB, not alpha
+        color.rgb *= scDarkFactor;
+    }
+    #endif
+
 
     /* DRAWBUFFERS:063 */
     gl_FragData[0] = color;

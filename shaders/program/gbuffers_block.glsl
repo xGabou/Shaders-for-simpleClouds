@@ -169,6 +169,16 @@ void main() {
     #ifdef COLOR_CODED_PROGRAMS
         ColorCodeProgram(color, blockEntityId);
     #endif
+    #ifdef USE_SC
+    {
+        float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+        float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
+        float stormCurve = pow(stormN, 2.5);
+
+        float scDarkFactor = mix(1.0, 0.15, stormCurve);
+        color.rgb *= scDarkFactor;
+    }
+    #endif
 
     /* DRAWBUFFERS:06 */
     gl_FragData[0] = color;

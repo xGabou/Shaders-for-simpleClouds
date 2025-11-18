@@ -3,7 +3,7 @@
 
     #include "/lib/colors/lightAndAmbientColors.glsl"
     #include "/lib/colors/skyColors.glsl"
-    #include "/lib/util/simpleCloudsBridge.glsl"
+    #include "/lib/util/sc_bridge.glsl"
 
     #ifdef CAVE_FOG
         #include "/lib/atmospherics/fog/caveFactor.glsl"
@@ -47,7 +47,6 @@
             finalSky = mix(finalSky, downColor, scatteredGroundMixer);
         //
 
-        float scStormDark = GetSimpleCloudStormDarkness();
         finalSky *= mix(1.0, 0.45, scStormDark);
 
         // Sky Ground
@@ -77,6 +76,27 @@
                 finalSky += glare * shadowTime * glareColor;
             }
         }
+        /* ===== SIMPLE CLOUDS SKY DARKENING ===== */
+        #ifdef USE_SC
+        {
+            float stormRaw = clamp(scStormDark, 0.0, 1.0);
+            // DEBUG: force color if SC is running
+            // calms storms below real cumulonimbus size
+            float stormNorm  = clamp(stormRaw / 0.6, 0.0, 1.0);
+            float stormCurve = pow(stormNorm, 1.4);
+
+            // thickness helps remove “white ring”
+            float thick = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+            float thickCurve = mix(1.0, 0.65, thick);
+
+            // final multiplier
+            float darkMult = mix(1.0, 0.35, stormCurve) * thickCurve;
+
+            finalSky *= darkMult;
+        }
+        #endif
+        /* ===== END SKY DARKENING ===== */
+
 
         #ifdef CAVE_FOG
             // Apply Cave Fog

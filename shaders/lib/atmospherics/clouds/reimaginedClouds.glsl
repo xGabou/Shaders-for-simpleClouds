@@ -1,5 +1,6 @@
 #include "/lib/atmospherics/clouds/cloudCoord.glsl"
-#include "/lib/util/simpleCloudsBridge.glsl"
+#include "/lib/util/sc_bridge.glsl"
+
 
 const float cloudStretch = 5.5;
 const float cloudHeight  = cloudStretch * 2.0;
@@ -7,7 +8,7 @@ const float cloudHeight  = cloudStretch * 2.0;
 bool GetCloudNoise(vec3 tracePos, inout vec3 tracePosM, int cloudAltitude) {
     tracePosM = ModifyTracePos(tracePos, cloudAltitude);
     vec2 coord = GetRoundedCloudCoord(tracePosM.xz, 0.125);
-    float thicknessScale = GetSimpleCloudThicknessScale();
+    float thicknessScale = Get_SC_ThicknessScale();
 
     #ifdef DEFERRED1
         float noise = texture2D(colortex3, coord).b;
@@ -22,11 +23,11 @@ bool GetCloudNoise(vec3 tracePos, inout vec3 tracePosM, int cloudAltitude) {
 
 vec4 GetVolumetricClouds(int cloudAltitude, float distanceThreshold, inout float cloudLinearDepth, float skyFade, float skyMult0, vec3 cameraPos, vec3 nPlayerPos, float lViewPosM, float VdotS, float VdotU, float dither) {
     vec4 volumetricClouds = vec4(0.0);
-    float thicknessScale = GetSimpleCloudThicknessScale();
+    float thicknessScale = Get_SC_ThicknessScale();
     float thicknessStretch = cloudStretch * thicknessScale;
     float distanceScale = mix(0.85, 1.2, clamp(thicknessScale - 0.5, 0.0, 1.0));
     float dynamicCloudHeight = cloudHeight * thicknessScale;
-    float visibility = GetSimpleCloudVisibilityFactor();
+    float visibility = Get_SC_VisibilityFactor();
 
     float higherPlaneAltitude = cloudAltitude + thicknessStretch;
     float lowerPlaneAltitude  = cloudAltitude - thicknessStretch;
@@ -120,7 +121,7 @@ vec4 GetVolumetricClouds(int cloudAltitude, float distanceThreshold, inout float
                     VdotSM2 += 0.5 * cloudShading + 0.08;
                 cloudShading = VdotSM2 * light * lightMult;
             #endif
-            cloudShading = ApplySimpleCloudTypeShading(cloudShading);
+            cloudShading = Apply_SC_TypeShading(cloudShading);
 
             vec3 colorSample = cloudAmbientColor + cloudLightColor * (0.07 + cloudShading);
             vec3 cloudSkyColor = GetSky(VdotU, VdotS, dither, true, false);
@@ -138,11 +139,28 @@ vec4 GetVolumetricClouds(int cloudAltitude, float distanceThreshold, inout float
             float skyMult1 = 1.0 - 0.2 * (1.0 - skyFade) * max(sunVisibility2, nightFactor);
             float skyMult2 = 1.0 - 0.33333 * skyFade;
             colorSample = mix(cloudSkyColor, colorSample * skyMult1, cloudFogFactor * skyMult2);
+           // Apply SC storm + thickness darkening AFTER Complementary shading
+            float scDark = mix(1.0, 0.45, Get_SC_StormDarkness());        // storm dim
+            float scThickDark = mix(1.0, 0.60, Get_SC_ThicknessRaw());   // thicker = darker
+
+            colorSample *= scDark;
+            colorSample *= scThickDark;
+
+            // also darken density so underside stops glowing
+            float densityDark = mix(1.0, 0.55, Get_SC_StormDarkness());
+            float densityThick = mix(1.0, 0.70, Get_SC_ThicknessRaw());
+
+
             colorSample *= pow2(1.0 - maxBlindnessDarkness);
 
             cloudLinearDepth = sqrt(lTracePos / renderDistance);
-            volumetricClouds.a = pow(cloudDistanceFactor * 1.33333, 0.5 + 10.0 * pow(abs(VdotSM1), 90.0)) * cloudMult * visibility;
+            float rawAlpha = pow(cloudDistanceFactor * 1.33333,
+                     0.5 + 10.0 * pow(abs(VdotSM1), 90.0))
+                 * cloudMult * visibility;
+
+            volumetricClouds.a = rawAlpha * densityDark * densityThick;
             volumetricClouds.rgb = colorSample;
+
             break;
         }
     }

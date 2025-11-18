@@ -109,6 +109,18 @@ void main() {
         color = shadow2D(shadowtex0, vec3(0.5)); // To Activate Shadowmap in Nether
     #endif
 
+    #ifdef USE_SC
+    {
+        float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+        float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
+        float stormCurve = pow(stormN, 2.5);
+
+        float scDarkFactor = mix(1.0, 0.15, stormCurve);
+
+        color.rgb *= scDarkFactor;
+    }
+    #endif
+
     /* DRAWBUFFERS:06 */
     gl_FragData[0] = color;
     gl_FragData[1] = vec4(0.0, materialMask, 0.0, 1.0);

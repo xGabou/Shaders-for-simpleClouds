@@ -42,7 +42,29 @@ void main() {
     if (color.r + color.g < 1.5) color.a *= rainTexOpacity;
     else color.a *= snowTexOpacity;
 
-    color.rgb = sqrt3(color.rgb) * (blocklightCol * 2.0 * lmCoord.x + (ambientColor + 0.2 * lightColor) * lmCoord.y * (0.6 + 0.3 * sunFactor));
+    vec3 lightRain = blocklightCol * 2.0 * lmCoord.x
+               + (ambientColor + 0.2 * lightColor) * lmCoord.y * (0.6 + 0.3 * sunFactor);
+
+    #ifdef USE_SC
+    {
+        float storm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+        float thick = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+
+        // 0 = clear sky, 0.6 = cumulonimbus reference
+        float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
+        float stormCurve = pow(stormNorm, 1.4);
+
+        // Darken rain lighting
+        float scMult = mix(1.0, 0.35, stormCurve);
+
+        // Add a very mild thickness fading (prevent pure-black)
+        scMult *= mix(1.0, 0.75, thick);
+        lightRain *= scMult;
+    }
+    #endif
+
+
+    color.rgb = sqrt3(color.rgb) * lightRain;
 
     #ifdef COLOR_CODED_PROGRAMS
         ColorCodeProgram(color, -1);

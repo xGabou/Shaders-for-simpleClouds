@@ -1,4 +1,4 @@
-#include "/lib/util/simpleCloudsBridge.glsl"
+#include "/lib/util/sc_bridge.glsl"
 
 #if CLOUD_UNBOUND_SIZE_MULT != 100
     #define CLOUD_UNBOUND_SIZE_MULT_M CLOUD_UNBOUND_SIZE_MULT * 0.01
@@ -36,7 +36,7 @@ float GetCloudNoise(vec3 tracePos, int cloudAltitude, float lTracePosXZ, float c
     float noise = 0.0;
     float currentPersist = 1.0;
     float total = 0.0;
-    float thicknessScale = GetSimpleCloudThicknessScale();
+    float thicknessScale = Get_SC_ThicknessScale();
 
     #if CLOUD_SPEED_MULT == 100
         #define CLOUD_SPEED_MULT_M CLOUD_SPEED_MULT * 0.01
@@ -107,11 +107,11 @@ float GetCloudNoise(vec3 tracePos, int cloudAltitude, float lTracePosXZ, float c
 
 vec4 GetVolumetricClouds(int cloudAltitude, float distanceThreshold, inout float cloudLinearDepth, float skyFade, float skyMult0, vec3 cameraPos, vec3 nPlayerPos, float lViewPosM, float VdotS, float VdotU, float dither) {
     vec4 volumetricClouds = vec4(0.0);
-    float thicknessScale = GetSimpleCloudThicknessScale();
+    float thicknessScale = Get_SC_ThicknessScale();
     float thicknessStretch = cloudStretch * thicknessScale;
     float distanceScale = mix(0.85, 1.2, clamp(thicknessScale - 0.5, 0.0, 1.0));
     float dynamicCloudHeight = cloudHeight * thicknessScale;
-    float visibility = GetSimpleCloudVisibilityFactor();
+    float visibility = Get_SC_VisibilityFactor();
 
     float higherPlaneAltitude = cloudAltitude + thicknessStretch;
     float lowerPlaneAltitude  = cloudAltitude - thicknessStretch;
@@ -192,7 +192,7 @@ vec4 GetVolumetricClouds(int cloudAltitude, float distanceThreshold, inout float
 
             float cloudShading = 1.0 - (higherPlaneAltitude - tracePos.y) / dynamicCloudHeight;
             cloudShading *= 1.0 + 0.75 * VdotSM3 * (1.0 - opacityFactor);
-            cloudShading = ApplySimpleCloudTypeShading(cloudShading);
+            cloudShading = Apply_SC_TypeShading(cloudShading);
 
             vec3 colorSample = cloudAmbientColor * (0.7 + 0.3 * cloudShading) + cloudLightColor * cloudShading;
             //vec3 colorSample = 2.5 * cloudLightColor * pow2(cloudShading); // <-- Used this to take the Unbound logo

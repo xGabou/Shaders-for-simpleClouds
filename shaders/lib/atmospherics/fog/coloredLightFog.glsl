@@ -46,6 +46,23 @@ vec3 GetColoredLightFog(vec3 nPlayerPos, vec3 translucentMult, float lViewPos, f
     #endif
 
     lightFog *= 1.0 - maxBlindnessDarkness;
+    #ifdef USE_SC
+    {
+        float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+
+        // 0.6 = cumulonimbus reference level
+        float stormNorm = clamp(stormRaw / 0.6, 0.0, 1.0);
+
+        // smoother curve, avoids over-darkening in weak storms
+        float stormCurve = pow(stormNorm, 1.7);
+
+        // volumetric fog darkening for strong storms
+        float scFogDark = mix(1.0, 0.35, stormCurve);
+
+        lightFog *= scFogDark;
+    }
+    #endif
+
 
     return pow(lightFog / sampleCount, vec3(0.25));
 }

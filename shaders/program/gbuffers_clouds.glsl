@@ -8,9 +8,9 @@
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
 
-// === SimpleClouds injected uniforms ===
-uniform vec4 simpleCloudsCloudState;
-uniform vec4 simpleCloudsCloudType;
+// === _SC_s injected uniforms ===
+uniform vec4 sc_State;
+uniform vec4 sc_Type;
 
 #if CLOUD_STYLE_DEFINE == 50
     in vec2 texCoord;
@@ -105,12 +105,21 @@ void main() {
         // ============================================================
         // PATCH: REMOVE COMPLEMENTARY CLOUD VISUALS
         // KEEP ALL SHADOW + LIGHTING CALCULATIONS
-        // ALLOW SIMPLECLOUDS TO RENDER INSTEAD
+        // ALLOW _SC_S TO RENDER INSTEAD
         // ============================================================
 
-        gl_FragData[0] = vec4(0.0, 0.0, 0.0, 0.0);
-        gl_FragData[1] = vec4(0.0, 0.0, 0.0, 0.0);
-        gl_FragData[2] = vec4(0.0, 0.0, 0.0, 0.0);
+/* DRAWBUFFERS:063 */
+
+gl_FragData[0] = vec4(0.0);
+
+/* Always write only when the attachment exists */
+if (gl_MaxDrawBuffers > 1)
+    gl_FragData[1] = vec4(0.0);
+
+if (gl_MaxDrawBuffers > 2)
+    gl_FragData[2] = vec4(0.0);
+
+
 
     #endif
 }

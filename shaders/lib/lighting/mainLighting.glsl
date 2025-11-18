@@ -1,4 +1,9 @@
 //Lighting Includes//
+#ifdef USE_SC
+uniform float scCloudStormDark;
+uniform float scCloudThickness;
+#endif
+
 #include "/lib/colors/lightAndAmbientColors.glsl"
 #include "/lib/lighting/ggx.glsl"
 
@@ -25,6 +30,8 @@
 #ifdef DO_PIXELATION_EFFECTS
     #include "/lib/misc/pixelation.glsl"
 #endif
+
+
 
 vec3 highlightColor = normalize(pow(lightColor, vec3(0.37))) * (0.3 + 1.5 * sunVisibility2) * (1.0 - 0.85 * rainFactor);
 
@@ -501,6 +508,17 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
             // Less light in the distance / more light closer to the camera during rain or night to simulate thicker fog
             float rainLF = 0.1 * rainFactor;
             float lightFogTweaks = 1.0 + max0(96.0 - lViewPos) * (0.002 * (1.0 - sunVisibility2) + 0.0104 * rainLF) - rainLF;
+            // --- SimpleClouds attenuation for ground brightness ---
+            // #ifdef USE_SC
+            // {
+            //     float scDark  = mix(1.0, 0.40, scCloudStormDark);    // storm dim
+            //     float scThick = mix(1.0, 0.70, scCloudThickness);    // thickness dim
+            //     float scFactor = scDark * scThick;
+
+            //     // Clamp the re-brightening effect
+            //     lightFogTweaks *= scFactor;
+            // }
+            // #endif
             ambientMult *= lightFogTweaks;
             lightColorM *= lightFogTweaks;
         }
@@ -555,6 +573,24 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
         ambientColorM = mix(ambientColorM, lightColorM, 0.25) * 1.5;
         lightColorM = lightColorM * 0.3;
     #endif
+    // ===== SimpleClouds global light attenuation =====
+    // #ifdef USE_SC  // optional, remove if not needed
+    //     // How dark storms are allowed to go
+    //     float scDark = mix(1.0, 0.45, scCloudStormDark);
+
+    //     // How much thick clouds dim skylight
+    //     float scThick = mix(1.0, 0.65, scCloudThickness);
+
+    //     // Combine
+    //     float scLightFactor = scDark * scThick;
+
+    //     // Apply to all lighting components BEFORE mixing
+    //     ambientColorM   *= scLightFactor;
+    //     lightColorM     *= scLightFactor;
+
+    //     // This one is CRITICAL: dims skylight properly
+    //     skyLightColor   *= scLightFactor;
+    // #endif
 
     // Scene Lighting Stuff
     vec3 sceneLighting = lightColorM * shadowMult + ambientColorM * ambientMult;
@@ -638,4 +674,19 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
     color.rgb *= finalDiffuse;
     color.rgb += lightHighlight;
     color.rgb *= pow2(1.0 - darknessLightFactor);
+    // ===== SimpleClouds global post-light attenuation =====
+    // #ifdef USE_SC
+    // {
+    //     float scDark    = mix(1.0, 0.40, scCloudStormDark);
+    //     float scThick   = mix(1.0, 0.70, scCloudThickness);
+    //     float scFactor  = scDark * scThick;
+
+    //     // Apply AFTER all Complementary lighting tweaks
+    //     color.rgb *= scFactor;
+
+    //     // Also darken horizon fog
+    //     fogColor *= scFactor;
+    // }
+    // #endif
+
 }

@@ -201,6 +201,16 @@ void main() {
     #endif
 
     color = pow(color, vec3(2.2));
+    #ifdef USE_SC
+    {
+        float scDark  = mix(1.0, 0.40, Get_SC_StormDarkness());
+        float scThick = mix(1.0, 0.70, Get_SC_ThicknessRaw());
+        float scFactor = scDark * scThick;
+
+        // Global world darkening
+        color *= scFactor;
+    }
+    #endif
 
     #ifdef LIGHTSHAFTS_ACTIVE
         #ifdef END

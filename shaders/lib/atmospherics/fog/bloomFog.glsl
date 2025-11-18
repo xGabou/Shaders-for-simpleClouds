@@ -37,6 +37,27 @@ float GetBloomFog(float lViewPos) {
     #endif
 
     bloomFogMult *= BLOOM_STRENGTH * 8.33333;
+        bloomFogMult *= BLOOM_STRENGTH * 8.33333;
+
+    /* ====== SIMPLE CLOUDS STORM DARKNESS INTEGRATION ====== */
+    #ifdef USE_SC
+    {
+        float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+
+        // 0.6 = cumulonimbus reference
+        float stormNorm = clamp(stormRaw / 0.6, 0.0, 1.0);
+
+        // curve to avoid sudden darkness
+        float stormCurve = pow(stormNorm, 1.7);
+
+        // bloom reduction factor
+        float bloomDarkness = mix(1.0, 0.45, stormCurve);
+
+        bloomFogMult *= bloomDarkness;
+    }
+    #endif
+    /* ====== END STORM DARKNESS ====== */
+
 
     return 1.0 + bloomFog * bloomFogMult;
 }

@@ -310,6 +310,13 @@ vec4 GetVolumetricLight(inout vec3 color, inout float vlFactor, vec3 translucent
     #endif
 
     volumetricLight.rgb *= vlMult;
+    #ifdef USE_SC
+    {
+        float scDark  = mix(1.0, 0.40, Get_SC_StormDarkness());
+        float scThick = mix(1.0, 0.70, Get_SC_ThicknessRaw());
+        volumetricLight.rgb *= scDark * scThick;
+    }
+    #endif
     volumetricLight = max(volumetricLight, vec4(0.0));
 
     #ifdef DISTANT_HORIZONS
