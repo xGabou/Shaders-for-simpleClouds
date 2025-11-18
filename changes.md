@@ -1,7 +1,11 @@
 # Complementary Reimagined – SimpleClouds Integration Log
 
 ## Latest update (SimpleClouds blending request)
+- Introduced a rain atmosphere module (`/shaders/lib/atmospherics/rain/rainCommon.glsl` and `rainSplashes.glsl`) plus new gbuffers/composite hooks so rain streaks respect depth, wind shear, and time-based variance while adding screen-space ripples and splashes tied to SimpleClouds weather intensity.
+- Added wet-surface compositing with puddle gloss/fresnel/ripple overlays, horizon tint layers, and a shared atmospheric height fade helper to keep storms grounded while drying out smoothly between showers.
 - Added `/shaders/lib/util/sc_bridge.glsl` to centralize the `sc_simpleCloudState` and `sc_simpleCloudType` uniform handling plus helper functions (visibility, thickness, storm factors, type-based shading curves).
+- Added wet-surface compositing with puddle gloss/fresnel/ripple overlays, horizon tint layers, and a shared atmospheric height fade helper to keep storms grounded while drying out smoothly between showers.
+- Introduced a comprehensive atmospheric enhancement suite: configurable storm boost/camera shake, sun-scattering arcs, cloud rim tinting via SimpleClouds data, chromatic highlight/altitude grading, lightning-aware flashes, lens dirt, heat haze, micro sky noise, and moon halo polish. All features live in modular GLSL helpers with dedicated shader options.
 - Updated the volumetric cloud stack (`/shaders/lib/atmospherics/clouds/mainClouds.glsl`, `reimaginedClouds.glsl`, `unboundClouds.glsl`) to scale density/opacity, sampling thickness, distance falloff, and shading with the SimpleClouds fade/density/storm inputs while keeping Complementary’s native logic.
 - Fed the SimpleClouds modifiers through the shared color pipelines (`/shaders/lib/colors/cloudColors.glsl`, `lightAndAmbientColors.glsl`, `skyColors.glsl`) plus `/shaders/lib/atmospherics/sky.glsl` so sky brightness and weather coloration now darken/tint with storminess rather than being overridden.
 - Reworked the `lightAndAmbientColors.glsl` adjustments so the storm/thickness multipliers are folded into the vector declarations instead of using global-scope `*=` statements, keeping Iris’s AST parser happy while preserving the intended visual change.

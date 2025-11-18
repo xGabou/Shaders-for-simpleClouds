@@ -439,12 +439,15 @@ void main() {
             float lightningDistance = length(lightningBoltPosition.xyz - worldPos);
             float lightningReach = 1.0 - smoothstep(40.0, 200.0, lightningDistance);
             float lightningFlash = lightningPresence * lightningReach * smoothstep(0.4, 0.95, rainStrength);
+            float lightningGlow = lightningFlash * exp(-lightningDistance * 0.01);
 
             color *= mix(vec3(1.0), vec3(0.3, 0.33, 0.38), scCloudShadow);
             color += lightningFlash * vec3(0.6, 0.7, 0.9);
+            color += lightningGlow * vec3(0.2, 0.24, 0.28);
 
             waterRefColor *= mix(1.0, 0.25, scCloudShadow);
             waterRefColor += lightningFlash * vec3(0.45, 0.55, 0.7);
+            waterRefColor += lightningGlow * vec3(0.25, 0.35, 0.45);
         #endif
     } else { // Sky
         #ifdef DISTANT_HORIZONS

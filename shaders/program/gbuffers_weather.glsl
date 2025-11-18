@@ -4,6 +4,7 @@
 
 //Common//
 #include "/lib/common.glsl"
+#include "/lib/atmospherics/rain/rainCommon.glsl"
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
@@ -14,6 +15,7 @@ in vec2 texCoord;
 flat in vec3 upVec, sunVec;
 
 flat in vec4 glColor;
+flat in vec2 rainWindDir;
 
 //Pipeline Constants//
 
@@ -22,8 +24,13 @@ float SdotU = dot(sunVec, upVec);
 float sunFactor = SdotU < 0.0 ? clamp(SdotU + 0.375, 0.0, 0.75) / 0.75 : clamp(SdotU + 0.03125, 0.0, 0.0625) / 0.0625;
 float sunVisibility = clamp(SdotU + 0.0625, 0.0, 0.125) / 0.125;
 float sunVisibility2 = sunVisibility * sunVisibility;
+float farMinusNear = far - near;
+vec2 view = vec2(viewWidth, viewHeight);
 
 //Common Functions//
+float GetLinearDepth(float depth) {
+    return (2.0 * near) / (far + near - depth * farMinusNear);
+}
 
 //Includes//
 #include "/lib/colors/lightAndAmbientColors.glsl"
@@ -34,13 +41,60 @@ float sunVisibility2 = sunVisibility * sunVisibility;
 
 //Program//
 void main() {
-    vec4 color = texture2D(tex, texCoord);
+    vec2 sampleCoord = texCoord;
+    float rainActivity = clamp(rainFactor + 0.35 * wetness, 0.0, 1.25);
+    #if ATM_STORM_BOOST == 1
+        float stormActivity = GetStormActivity();
+        rainActivity = max(rainActivity, stormActivity * 1.2);
+    #endif
+    if (rainActivity > 0.0) {
+        float jitterA = Hash12(gl_FragCoord.xy);
+        float jitterB = Hash12(gl_FragCoord.yx + frameTimeCounter * 0.25);
+        vec2 windDir = normalize(vec2(rainWindDir));
+        vec2 perpDir = Rotate90(windDir);
+        vec2 microOffset = (windDir * (jitterA - 0.5) + perpDir * (jitterB - 0.5));
+        microOffset *= mix(0.01, 0.04, rainActivity);
+        #if ATM_STORM_BOOST == 1
+            float stormJitter = GetStormActivity();
+            microOffset *= mix(1.0, 1.85, stormJitter);
+            microOffset += windDir * 0.01 * stormJitter;
+        #endif
+        sampleCoord += microOffset;
+    }
+
+    vec4 color = texture2D(tex, sampleCoord);
+    bool isSnow = color.r + color.g >= 1.5;
+    if (isSnow && rainActivity > 0.0) {
+        color = texture2D(tex, texCoord);
+    }
     color *= glColor;
 
     if (color.a < 0.1 || isEyeInWater == 3) discard;
 
-    if (color.r + color.g < 1.5) color.a *= rainTexOpacity;
-    else color.a *= snowTexOpacity;
+    if (isSnow) color.a *= snowTexOpacity;
+    else {
+        color.a *= rainTexOpacity;
+        #if ATM_STORM_BOOST == 1
+            float stormBoost = GetStormActivity();
+            color.a *= mix(1.0, 1.45, stormBoost);
+        #endif
+
+        float velNoise = fract(Hash12(gl_FragCoord.yx * 0.75) + frameTimeCounter * 0.65);
+        float thickNoise = Hash12(gl_FragCoord.xy * 0.5 + frameTimeCounter * 0.2);
+        color.a *= mix(0.75, 1.25, thickNoise);
+        color.rgb *= mix(0.85, 1.1, velNoise);
+
+        vec2 screenUV = gl_FragCoord.xy / view;
+        float sceneDepth = texture2D(depthtex0, screenUV).r;
+        if (sceneDepth < 0.9999) {
+            float rainLinear = GetLinearDepth(gl_FragCoord.z);
+            float sceneLinear = GetLinearDepth(sceneDepth);
+            float depthDelta = abs(sceneLinear - rainLinear) * farMinusNear;
+            float proximity = exp(-depthDelta * 0.6);
+            float depthShade = mix(1.0, 0.45, proximity);
+            color.rgb *= depthShade;
+        }
+    }
 
     vec3 lightRain = blocklightCol * 2.0 * lmCoord.x
                + (ambientColor + 0.2 * lightColor) * lmCoord.y * (0.6 + 0.3 * sunFactor);
@@ -108,6 +162,24 @@ flat out vec4 glColor;
 void main() {
     vec4 position = gbufferModelViewInverse * gl_ModelViewMatrix * gl_Vertex;
     glColor = gl_Color;
+
+    vec2 windDir = GetAtmosphericWindDir();
+    rainWindDir = windDir;
+
+    float rainActivity = clamp(rainFactor + 0.35 * wetness, 0.0, 1.25);
+    #if ATM_STORM_BOOST == 1
+        rainActivity = max(rainActivity, GetStormActivity());
+    #endif
+    if (rainActivity > 0.0) {
+        float gust = mix(0.7, 1.3, Hash12(position.xz * 0.25 + frameTimeCounter * 0.15));
+        float bendMagnitude = mix(0.008, 0.045, rainActivity) * gust;
+        float heightMask = pow(clamp(gl_MultiTexCoord0.t, 0.0, 1.0), 1.25);
+        float shearProfile = mix(1.0, 6.0, heightMask);
+        #if ATM_STORM_BOOST == 1
+            bendMagnitude *= GetStormStretchFactor();
+        #endif
+        position.xz += windDir * bendMagnitude * shearProfile;
+    }
 
     #ifdef WAVING_RAIN
         float rainWavingFactor = eyeBrightnessM2; // Prevents clipping inside interiors

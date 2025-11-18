@@ -44,6 +44,11 @@ vec2 view = vec2(viewWidth, viewHeight);
 //Includes//
 #include "/lib/atmospherics/fog/waterFog.glsl"
 #include "/lib/atmospherics/fog/caveFactor.glsl"
+#include "/lib/util/spaceConversion.glsl"
+#include "/lib/atmospherics/atmoCommon.glsl"
+#include "/lib/atmospherics/rain/rainCommon.glsl"
+#include "/lib/atmospherics/rain/rainSplashes.glsl"
+#include "/lib/atmospherics/rain/wetSurface.glsl"
 
 #ifdef BLOOM_FOG_COMPOSITE
     #include "/lib/atmospherics/fog/bloomFog.glsl"
@@ -54,10 +59,6 @@ vec2 view = vec2(viewWidth, viewHeight);
         #include "/lib/atmospherics/enderBeams.glsl"
     #endif
     #include "/lib/atmospherics/volumetricLight.glsl"
-#endif
-
-#if WATER_MAT_QUALITY >= 3 || defined NETHER_STORM || defined COLORED_LIGHT_FOG
-    #include "/lib/util/spaceConversion.glsl"
 #endif
 
 #if WATER_MAT_QUALITY >= 3
@@ -86,7 +87,21 @@ vec2 view = vec2(viewWidth, viewHeight);
 
 //Program//
 void main() {
-    vec3 color = texelFetch(colortex0, texelCoord, 0).rgb;
+    vec2 baseUV = texCoord;
+    vec3 baseColor = texelFetch(colortex0, texelCoord, 0).rgb;
+    vec3 color = baseColor;
+    #if ATM_STORM_BOOST == 1
+        float stormActivity = GetStormActivity();
+        if (stormActivity > 0.05) {
+            vec2 wind = normalize(GetAtmosphericWindVector() + vec2(0.0001));
+            vec2 shake = wind * 0.0008 * stormActivity;
+            float shakePhase = frameTimeCounter * (0.35 + 0.65 * stormActivity);
+            shake += vec2(sin(shakePhase), cos(shakePhase * 1.7)) * 0.0005 * stormActivity;
+            vec2 shakenCoord = clamp(baseUV + shake, vec2(0.001), vec2(0.999));
+            vec3 shakenColor = texture2D(colortex0, shakenCoord).rgb;
+            color = mix(baseColor, shakenColor, clamp(stormActivity * 0.35, 0.0, 0.45));
+        }
+    #endif
     float z0 = texelFetch(depthtex0, texelCoord, 0).r;
     float z1 = texelFetch(depthtex1, texelCoord, 0).r;
 
@@ -94,6 +109,7 @@ void main() {
     vec4 viewPos = gbufferProjectionInverse * (screenPos * 2.0 - 1.0);
     viewPos /= viewPos.w;
     float lViewPos = length(viewPos.xyz);
+    vec3 worldPos0 = ViewToPlayer(viewPos.xyz);
 
     #if defined DISTANT_HORIZONS && !defined OVERWORLD
         float z0DH = texelFetch(dhDepthTex, texelCoord, 0).r;
@@ -183,9 +199,9 @@ void main() {
         color.rgb *= underwaterMult * 0.85;
         volumetricEffect.rgb *= pow2(underwaterMult * 0.71);
 
-        #ifdef COLORED_LIGHT_FOG
-            lightFog *= underwaterMult;
-        #endif
+    #ifdef COLORED_LIGHT_FOG
+        lightFog *= underwaterMult;
+    #endif
     } else if (isEyeInWater == 2) {
         if (z1 == 1.0) color.rgb = fogColor * 5.0;
 
@@ -198,6 +214,64 @@ void main() {
     #ifdef COLORED_LIGHT_FOG
         color /= 1.0 + pow2(GetLuminance(lightFog)) * lightFogMult * 2.0;
         color += lightFog * lightFogMult * 0.5;
+    #endif
+
+    ApplyRainSplashes(color, texCoord, viewPos.xyz, worldPos0, z0);
+    #if ATM_STORM_BOOST == 1
+        ApplyWetSurfaceOverlay(color, texCoord, viewPos.xyz, worldPos0, z0, lViewPos, sunFactor);
+    #endif
+
+    #ifdef OVERWORLD
+    #if ATM_COLOR_GRADE == 1
+    {
+        vec3 viewDir = normalize(viewPos.xyz);
+        float horizonMask = smoothstep(0.02, 0.45, 1.0 - abs(viewDir.y));
+        if (horizonMask > 0.0001) {
+            float stormMask = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+            float absoluteHeight = worldPos0.y + cameraPosition.y;
+            float heightFade = AtmosphericHeightFade(max(absoluteHeight, 0.0), 0.008, 1.0 + 0.6 * stormMask);
+            float invRain = 1.0 - clamp(rainFactor, 0.0, 1.0);
+            float dayBlend = smoothstep(-0.2, 0.2, SdotU);
+            float nightBlend = 1.0 - dayBlend;
+            float sunriseBlend = smoothstep(0.35, 0.95, 1.0 - abs(SdotU)) * dayBlend;
+
+            vec3 warmTone = vec3(0.85, 0.46, 0.28);
+            vec3 coolTone = vec3(0.16, 0.24, 0.40);
+            vec3 stormTone = vec3(0.22, 0.28, 0.32);
+
+            vec3 blendedTone = warmTone * sunriseBlend + coolTone * nightBlend;
+            blendedTone = mix(blendedTone, stormTone, stormMask);
+
+            float horizonWeight = horizonMask * heightFade * (0.35 + 0.4 * invRain);
+            horizonWeight *= mix(1.0, 1.65, stormMask);
+            color = mix(color, color + blendedTone * horizonWeight, horizonWeight);
+        }
+    }
+    #endif
+#endif
+
+#if ATM_COLOR_GRADE == 1
+        float altitude = cameraPosition.y + eyeAltitude;
+        float altitudeNorm = clamp((altitude + 32.0) / 256.0, 0.0, 1.0);
+        vec3 lowTone = vec3(1.02, 0.99, 0.96);
+        vec3 highTone = vec3(0.9, 0.96, 1.05);
+        vec3 tone = mix(lowTone, highTone, altitudeNorm);
+        color *= tone;
+
+        vec2 chromaOffset = (texCoord - 0.5) * 0.0009;
+        float highlightMask = smoothstep(1.2, 4.0, max(color.r, max(color.g, color.b)));
+        if (highlightMask > 0.0001) {
+            vec3 chromaColor;
+            chromaColor.r = texture2D(colortex0, clamp(texCoord + chromaOffset, vec2(0.001), vec2(0.999))).r;
+            chromaColor.g = color.g;
+            chromaColor.b = texture2D(colortex0, clamp(texCoord - chromaOffset, vec2(0.001), vec2(0.999))).b;
+            color = mix(color, chromaColor, highlightMask * 0.15);
+        }
+
+        if (z0 == 1.0) {
+            float thicknessFade = AtmosphericHeightFade(max(worldPos0.y + cameraPosition.y, 0.0), 0.01, 1.0 + 0.6 * GetStormActivity());
+            color = mix(color, color * thicknessFade, 0.2);
+        }
     #endif
 
     color = pow(color, vec3(2.2));
@@ -223,6 +297,54 @@ void main() {
 
         color += volumetricEffect.rgb;
     #endif
+
+    #if ATM_ENV_POLISH == 1
+        if (rainFactor > 0.35) {
+            vec2 dripCoord = texCoord * vec2(viewWidth, viewHeight) / 128.0 + frameTimeCounter * 0.02;
+            float dripNoise = texture2D(noisetex, dripCoord).r;
+            float dripPulse = texture2D(noisetex, dripCoord * 2.0).g;
+            float droplet = smoothstep(0.55, 0.95, dripNoise + 0.3 * dripPulse);
+            color *= 1.0 - droplet * 0.02;
+        }
+
+        float heatMask = smoothstep(0.65, 1.0, inDry) * smoothstep(0.4, 0.9, sunFactor) * (1.0 - rainFactor);
+        if (heatMask > 0.0) {
+            vec2 hazeOffset = vec2(
+                sin(frameTimeCounter * 0.8 + texCoord.y * 120.0),
+                cos(frameTimeCounter * 0.6 + texCoord.x * 90.0)
+            ) * 0.0008 * heatMask;
+            vec3 hazeColor = texture2D(colortex0, clamp(texCoord + hazeOffset, vec2(0.001), vec2(0.999))).rgb;
+            color = mix(color, hazeColor, heatMask * 0.2);
+        }
+
+        float nightSilhouette = smoothstep(0.0, 0.08, 0.08 - sunVisibility);
+        color *= mix(1.0, 0.82, nightSilhouette);
+    #endif
+
+    #if ATM_STORM_BOOST == 1
+        float stormDark = GetStormActivity();
+        if (stormDark > 0.05 && z0 == 1.0) {
+            float lowBand = 1.0 - smoothstep(0.08, 0.35, texCoord.y);
+            float darkness = stormDark * lowBand * 0.4;
+            color *= 1.0 - darkness * 0.5;
+            volumetricEffect.rgb *= 1.0 + darkness;
+        }
+    #endif
+
+    float lightningPresence = step(0.5, lightningBoltPosition.w);
+    if (lightningPresence > 0.5) {
+        vec3 worldSample = cameraPosition + worldPos0;
+        float lightningDistance = length(lightningBoltPosition.xyz - worldSample);
+        float lightningReach = 1.0 - smoothstep(40.0, 220.0, lightningDistance);
+        float lightningFlash = lightningPresence * lightningReach * smoothstep(0.3, 0.95, rainFactor + 0.15);
+        vec3 flashTint = vec3(0.6, 0.7, 0.85);
+        if (z0 == 1.0) {
+            color += flashTint * lightningFlash;
+        }
+        float groundFade = exp(-lViewPos * 0.02);
+        color += flashTint * 0.35 * lightningFlash * groundFade;
+        volumetricEffect.rgb += flashTint * lightningFlash * 0.35;
+    }
 
     #ifdef BLOOM_FOG_COMPOSITE
         color *= GetBloomFog(lViewPos); // Reminder: Bloom Fog can move between composite1-2-3

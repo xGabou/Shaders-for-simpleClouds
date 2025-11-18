@@ -1,5 +1,7 @@
 #include "/lib/atmospherics/clouds/cloudCoord.glsl"
 #include "/lib/util/sc_bridge.glsl"
+#include "/lib/atmospherics/atmoCommon.glsl"
+#include "/lib/atmospherics/clouds/cloudIntegration.glsl"
 
 
 const float cloudStretch = 5.5;
@@ -143,6 +145,12 @@ vec4 GetVolumetricClouds(int cloudAltitude, float distanceThreshold, inout float
             float fogMask = 1.0 - pow(scCoverage, 0.6);
             float fogMix = clamp(fogMixBase * fogMask, 0.0, 1.0);
             colorSample = mix(cloudSkyColor, colorSample * skyMult1, fogMix);
+            #if ATM_CLOUD_TINT == 1
+                float stormMask = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+                colorSample = ApplyCloudRimShading(colorSample, tracePos, cameraPos, sunVec, cloudSkyColor, stormMask);
+                colorSample = ApplyCloudAltitudeGrade(colorSample, tracePos, stormMask);
+                colorSample = ApplyCloudStormColor(colorSample, stormMask);
+            #endif
            // Apply SC storm + thickness darkening AFTER Complementary shading
             float scDark = mix(1.0, 0.65, Get_SC_StormDarkness());        // storm dim
             float scThickDark = mix(1.0, 0.85, Get_SC_ThicknessRaw());   // thicker = darker

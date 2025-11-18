@@ -33,6 +33,11 @@ float shadowTime = shadowTimeVar2 * shadowTimeVar2;
 #include "/lib/util/dither.glsl"
 
 #ifdef OVERWORLD
+    #include "/lib/atmospherics/sunArc.glsl"
+    #include "/lib/atmospherics/skyNoise.glsl"
+#endif
+
+#ifdef OVERWORLD
     #include "/lib/atmospherics/sky.glsl"
     #include "/lib/atmospherics/stars.glsl"
 #endif
@@ -81,6 +86,13 @@ void main() {
         float dither = Bayer8(gl_FragCoord.xy);
 
         color.rgb = GetSky(VdotU, VdotS, dither, true, false);
+
+        #if ATM_SUN_SCATTER == 1
+            color.rgb = ApplySunScatteringArc(color.rgb, sunVec, nViewPos, sunVisibility, dither);
+        #endif
+        #if ATM_ENV_POLISH == 1
+            color.rgb = ApplySkyMicroNoise(color.rgb, nViewPos, nightFactor, dither);
+        #endif
 
         #ifdef ATM_COLOR_MULTS
             color.rgb *= GetAtmColorMult();
@@ -179,6 +191,14 @@ void main() {
 
                     color.rgb = mix(color.rgb, moonColor, sunMoonMixer);
                 }
+            }
+        #endif
+
+        #if ATM_ENV_POLISH == 1
+            if (VdotS < 0.0) {
+                float halo = pow(max(-VdotS, 0.0), 4.5) * (1.0 - rainFactor) * (1.0 - sunFactor);
+                float haloNight = smoothstep(0.2, 0.85, nightFactor);
+                color.rgb += vec3(0.18, 0.2, 0.28) * halo * haloNight;
             }
         #endif
     #endif

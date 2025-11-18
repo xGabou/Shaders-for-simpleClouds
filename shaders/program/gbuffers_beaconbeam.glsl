@@ -4,6 +4,7 @@
 
 //Common//
 #include "/lib/common.glsl"
+#include "/lib/util/sc_bridge.glsl"
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER

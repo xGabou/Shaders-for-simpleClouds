@@ -87,6 +87,13 @@
     #define SUN_MOON_DURING_RAIN
     #define NIGHT_STAR_AMOUNT 2 //[2 3]
     #define RAINBOWS 1 //[0 1 3]
+
+// Atmospheric Addon Settings //
+    #define ATM_STORM_BOOST 1 //[0 1]
+    #define ATM_SUN_SCATTER 1 //[0 1]
+    #define ATM_CLOUD_TINT 1 //[0 1]
+    #define ATM_COLOR_GRADE 1 //[0 1]
+    #define ATM_ENV_POLISH 1 //[0 1]
     #define CLOUD_STYLE_DEFINE -1 //[-1 0 1 3 50]
     //#define CLOUD_SHADOWS
     #define CLOUD_CLOSED_AREA_CHECK
