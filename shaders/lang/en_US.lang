@@ -338,11 +338,6 @@ value.CLOUD_STYLE_DEFINE.50=Vanilla §e[*]
 
 option.CLOUD_SHADOWS=Cloud Shadows
 option.CLOUD_SHADOWS.comment=Enables shadows that are cast from the clouds. §e[*]§r This setting only works with the "Reimagined" or "Unbound" Cloud Styles. §e[*]§r Cloud shadows will be randomly generated if Cloud Style is set to "Unbound", because of the extra complexity of Unbound clouds.
-option.cloudShadowQuality=Cloud Shadow Quality
-option.cloudShadowQuality.comment=Chooses how SimpleClouds coverage drives lighting attenuation. "Low" keeps the legacy blend with optional overrides, "Medium" uses only the analytic storm/thickness integrator, and "High" samples the dedicated cloud layer texture when available.
-value.cloudShadowQuality.0=Low (Legacy Blend)
-value.cloudShadowQuality.1=Medium (Analytic)
-value.cloudShadowQuality.2=High (Layer Texture)
 
 option.CLOUD_CLOSED_AREA_CHECK=Prevent Clouds in Interiors
 option.CLOUD_CLOSED_AREA_CHECK.comment=Does additional checks to remove clouds in closed areas. §e[*]§r This setting only works with the "Reimagined" or "Unbound" Cloud Styles. §e[*]§r This setting will be disabled if "Real-Time Shadows" is OFF.

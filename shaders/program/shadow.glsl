@@ -4,6 +4,8 @@
 
 //Common//
 #include "/lib/common.glsl"
+uniform vec3 cameraPosition;
+uniform vec3 cameraPosition;
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER

@@ -12,8 +12,11 @@
             uniform vec4 sc_State;
             uniform vec4 sc_Type;
             uniform float sc_CloudShadowFactor;
-            uniform int cloudShadowQuality;
             uniform sampler2D sc_CloudLayerTex;
+        #endif
+
+        #ifndef CLOUD_SHADOW_QUALITY_MODE
+            #define CLOUD_SHADOW_QUALITY_MODE 1
         #endif
 
         vec4 Get_SC_StateSafe() {
@@ -76,7 +79,7 @@
             return shadow * 0.85; // never full black
         }
         int Get_SC_CloudShadowMode() {
-            return clamp(cloudShadowQuality, 0, 2);
+            return clamp(CLOUD_SHADOW_QUALITY_MODE, 0, 2);
         }
 
         bool SC_HasCloudLayerTexture() {
