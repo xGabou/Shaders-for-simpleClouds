@@ -570,6 +570,15 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
     #endif
     #if defined USE_SC && defined APPLY_SC_CLOUD_SHADOWS
         float scDirShadow = clamp(1.0 - Get_SC_FinalShadow(), 0.1, 1.0);
+
+        // Entities and held items were becoming pitch black because they only
+        // receive direct light attenuation in this pass.  Keep most of the
+        // shading for terrain, but greatly soften it for those programs so
+        // clouds merely tint them instead of fully shadowing them.
+        #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
+            scDirShadow = mix(1.0, scDirShadow, 0.25);
+        #endif
+
         shadowMult *= scDirShadow;
     #endif
     // ===== SimpleClouds global light attenuation =====
