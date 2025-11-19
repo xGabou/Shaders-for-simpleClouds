@@ -4,6 +4,7 @@
 
 //Common//
 #include "/lib/common.glsl"
+#define APPLY_SC_CLOUD_SHADOWS
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
