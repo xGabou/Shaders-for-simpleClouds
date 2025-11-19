@@ -12,6 +12,8 @@
             uniform vec4 sc_State;
             uniform vec4 sc_Type;
             uniform float sc_CloudShadowFactor;
+            uniform int cloudShadowQuality;
+            uniform sampler2D sc_CloudLayerTex;
         #endif
 
         vec4 Get_SC_StateSafe() {
@@ -73,13 +75,44 @@
 
             return shadow * 0.85; // never full black
         }
+        int Get_SC_CloudShadowMode() {
+            return clamp(cloudShadowQuality, 0, 2);
+        }
+
+        bool SC_HasCloudLayerTexture() {
+            ivec2 texSize = textureSize(sc_CloudLayerTex, 0);
+            return texSize.x > 0 && texSize.y > 0;
+        }
+
+        vec2 Get_SC_CloudLayerUV() {
+            // World-aligned UV using camera position keeps the coverage map steady
+            vec2 uv = fract(cameraPosition.xz * 0.000244140625); // 1 / 4096
+            return uv;
+        }
+
+        float Sample_SC_CloudLayerShadow() {
+            if (!SC_HasCloudLayerTexture()) return -1.0;
+            float coverage = texture2D(sc_CloudLayerTex, Get_SC_CloudLayerUV()).r;
+            return clamp(coverage, 0.0, 1.0);
+        }
+
         float Get_SC_FinalShadow() {
-            // choose Java override if > 0
-            if (sc_CloudShadowFactor > 0.0) {
-                return clamp(sc_CloudShadowFactor, 0.0, 1.0);
+            int mode = Get_SC_CloudShadowMode();
+
+            if (mode == 2) {
+                float sampledShadow = Sample_SC_CloudLayerShadow();
+                if (sampledShadow >= 0.0) {
+                    return sampledShadow;
+                }
+                mode = 1; // fall back to analytic if the sampler is missing
             }
 
-            // otherwise use shader-side estimation
+            if (mode == 0) {
+                if (sc_CloudShadowFactor > 0.0) {
+                    return clamp(sc_CloudShadowFactor, 0.0, 1.0);
+                }
+            }
+
             return Get_SC_ShadowStrength();
         }
 
