@@ -597,7 +597,7 @@ void main() {
 
         #ifdef END
             if (frameCounter % int(0.06666 / frameTimeSmooth + 0.5) == 0) { // Change speed is not too different above 10 fps
-                vec2 absCamPosXZ = abs(cameraPosition.xz);
+                vec2 absCamPosXZ = abs(gbufferModelViewInverse[3].xz);
                 float maxCamPosXZ = max(absCamPosXZ.x, absCamPosXZ.y);
 
                 if (gl_Fog.start / far > 0.5 || maxCamPosXZ > 350.0) vlFactor = max(vlFactor - OSIEBCA*2, 0.0);
