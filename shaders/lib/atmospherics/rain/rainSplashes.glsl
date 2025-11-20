@@ -54,8 +54,8 @@
         float dropLife = mix(0.18, 0.32, mix(rainFactor, 0.7, bigDrop));
         float dropRate = mix(0.35, 0.85, rainFactor);
         float timer = fract(hash + frameTimeCounter * dropRate);
-        float active = step(timer, dropLife);
-        if (active < 0.5) return;
+        float activeRain = step(timer, dropLife);
+        if (activeRain < 0.5) return;
 
         float phase = clamp(timer / dropLife, 0.0, 1.0);
         vec2 windDir = GetAtmosphericWindDir();
@@ -73,7 +73,7 @@
         float splashPulse = pow(1.0 - phase, 1.5);
         float highlight = splashPulse * mix(1.0, 1.35, bigDrop);
 
-        float intensity = detection * active * mix(0.08, 0.35, rainFactor);
+        float intensity = detection * activeRain * mix(0.08, 0.35, rainFactor);
         float rippleIntensity = ripple * intensity;
         float highlightIntensity = highlight * intensity;
 
