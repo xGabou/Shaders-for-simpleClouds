@@ -8,9 +8,7 @@
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
 
-// === _SC_s injected uniforms ===
-uniform vec4 sc_State;
-uniform vec4 sc_Type;
+
 
 #if CLOUD_STYLE_DEFINE == 50
     in vec2 texCoord;

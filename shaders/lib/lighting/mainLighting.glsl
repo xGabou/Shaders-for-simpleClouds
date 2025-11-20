@@ -1,4 +1,5 @@
 //Lighting Includes//
+
 #include "/lib/colors/lightAndAmbientColors.glsl"
 #include "/lib/lighting/ggx.glsl"
 #include "/lib/util/sc_bridge.glsl"
@@ -505,7 +506,7 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
             float rainLF = 0.1 * rainFactor;
             float lightFogTweaks = 1.0 + max0(96.0 - lViewPos) * (0.002 * (1.0 - sunVisibility2) + 0.0104 * rainLF) - rainLF;
             // --- SimpleClouds attenuation for ground brightness ---
-            #ifdef USE_SC
+            #if USE_SC
             {
                 float scCoverage = max(Get_SC_StormDarkness(), Get_SC_ThicknessRaw());
                 float shadowAdv = clamp(scCoverage, 0.0, 1.0);
@@ -569,8 +570,15 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
         lightColorM = lightColorM * 0.3;
     #endif
     #if defined USE_SC && defined APPLY_SC_CLOUD_SHADOWS
-        float scDirShadow = clamp(1.0 - Get_SC_FinalShadow(), 0.1, 1.0);
+       float cloudShadow = Get_SC_FinalShadow();
+       
 
+        // Ignore extremely small values caused by floating noise or empty layers
+        if (cloudShadow < 0.05) cloudShadow = 0.0;
+
+        float scDirShadow = clamp(1.0 - cloudShadow, 0.1, 1.0);
+
+        //float scDirShadow = clamp(1.0 - 0, 0.1, 1.0);
         // Entities and held items were becoming pitch black because they only
         // receive direct light attenuation in this pass.  Keep most of the
         // shading for terrain, but greatly soften it for those programs so
@@ -582,15 +590,11 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
         shadowMult *= scDirShadow;
     #endif
     // ===== SimpleClouds global light attenuation =====
-    #ifdef USE_SC  // optional, remove if not needed
-        // How dark storms are allowed to go
-        float scDark = mix(1.0, 0.45, Get_SC_StormDarkness());
+    #if USE_SC  // optional, remove if not needed
+        float scDark  = mix(1.0, 0.80, Get_SC_StormDarkness());
+        float scThick = mix(1.0, 0.90, Get_SC_ThicknessRaw());
+        float scLightFactor = max(scDark * scThick, 0.65);
 
-        // How much thick clouds dim skylight
-        float scThick = mix(1.0, 0.65, Get_SC_ThicknessRaw());
-
-        // Combine
-        float scLightFactor = scDark * scThick;
         #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
             scLightFactor = 1.0;
         #endif
@@ -668,7 +672,7 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
         lightHighlight = isEyeInWater != 1 ? shadowMult : pow(shadowMult, vec3(0.25)) * 0.35;
         lightHighlight *= (subsurfaceHighlight + specularHighlight) * highlightColor;
 
-        #ifdef USE_SC
+        #if USE_SC
             // Fade specular glare when thick clouds block the sun
             float scShadow = clamp(Get_SC_FinalShadow(), 0.0, 1.0);
             float scGlareFade = 1.0 - smoothstep(0.25, 0.85, scShadow);
@@ -692,20 +696,39 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
     color.rgb += lightHighlight;
     color.rgb *= pow2(1.0 - darknessLightFactor);
     // ===== SimpleClouds global post-light attenuation =====
-    #ifdef USE_SC
+    #if USE_SC
     {
-        float scDark    = mix(1.0, 0.40, Get_SC_StormDarkness());
-        float scThick   = mix(1.0, 0.70, Get_SC_ThicknessRaw());
-        float scFactor  = scDark * scThick;
+        float scDark  = mix(1.0, 0.85, Get_SC_StormDarkness());
+        float scThick = mix(1.0, 0.95, Get_SC_ThicknessRaw());
+        float scFactor = max(scDark * scThick, 0.80);
 
         #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
             scFactor = 1.0;
-        #else
-            scFactor = max(scFactor, 0.70);
         #endif
 
-        // Apply AFTER all Complementary lighting tweaks
-        color.rgb *= scFactor;
+        // soften the influence to avoid double darkening
+        color.rgb *= mix(1.0, scFactor, 0.35);
+
+        // vec3 dbg = vec3(0.0);
+        // float v = Get_SC_VisibilityFactor();
+
+        // if      (v <= 0.0) dbg = vec3(0.0, 0.0, 0.0);          // 0.0 → black
+        // else if (v <= 0.1) dbg = vec3(1.0, 0.0, 0.0);          // 0.1 → red
+        // else if (v <= 0.2) dbg = vec3(1.0, 0.5, 0.0);          // 0.2 → orange
+        // else if (v <= 0.3) dbg = vec3(1.0, 1.0, 0.0);          // 0.3 → yellow
+        // else if (v <= 0.4) dbg = vec3(0.5, 1.0, 0.0);          // 0.4 → yellow-green
+        // else if (v <= 0.5) dbg = vec3(0.0, 1.0, 0.0);          // 0.5 → green
+        // else if (v <= 0.6) dbg = vec3(0.0, 1.0, 0.5);          // 0.6 → aqua-green
+        // else if (v <= 0.7) dbg = vec3(0.0, 0.0, 0.0);          // 0.7 → cyan
+        // else if (v <= 0.8) dbg = vec3(0.0, 0.5, 1.0);          // 0.8 → blue-cyan
+        // else if (v <= 0.9) dbg = vec3(0.0, 0.0, 1.0);          // 0.9 → blue
+        // else if (v <  1.0) dbg = vec3(0.5, 0.0, 1.0);          // 1.0− → violet
+        // else                dbg = vec3(1.0, 0, 1.0);         // >= 1.0 → purple
+
+        // // overlay debug
+        // color.rgb = mix(color.rgb, dbg, 0.4);
+
+
     }
     #endif
 

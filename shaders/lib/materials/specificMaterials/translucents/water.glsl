@@ -33,22 +33,22 @@
         color.rgb = vec3(0.13, 0.2, 0.27);
     #endif
 #endif
-#ifdef USE_SC
-float sc = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+#if USE_SC
+    float sc = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
 
-// mapping storm : below 0.2 = nothing, above 0.7 = full effect
-float scN = smoothstep(0.20, 0.70, sc);
+    // mapping storm : below 0.2 = nothing, above 0.7 = full effect
+    float scN = smoothstep(0.20, 0.70, sc);
 
-// target storm color (blue, not black, not transparent)
-vec3 stormBlue = vec3(0.12, 0.18, 0.26);
+    // target storm color (blue, not black, not transparent)
+    vec3 stormBlue = vec3(0.12, 0.18, 0.26);
 
-// preserve brightness so alpha doesn't drop
-float lum = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
-float minLum = max(lum, 0.20); // keep brightness above 0.20
-vec3 safeColor = normalize(color.rgb + 0.0001) * minLum;
+    // preserve brightness so alpha doesn't drop
+    float lum = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+    float minLum = max(lum, 0.20); // keep brightness above 0.20
+    vec3 safeColor = normalize(color.rgb + 0.0001) * minLum;
 
-// apply SC tint without killing brightness
-color.rgb = safeColor * (1.0 - scN) + stormBlue * scN;
+    // apply SC tint without killing brightness
+    color.rgb = safeColor * (1.0 - scN) + stormBlue * scN;
 #endif
 
 

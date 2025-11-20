@@ -5,25 +5,25 @@
 
     #if defined OVERWORLD
         #ifndef COMPOSITE
-            vec3 noonClearLightColor = vec3(0.7, 0.55, 0.4) * 1.9; //ground and cloud color
+            vec3 noonClearLightColor = vec3(0.7, 0.55, 0.4) * 1.9;
         #else
-            vec3 noonClearLightColor = vec3(0.4, 0.7, 1.4); //light shaft color
+            vec3 noonClearLightColor = vec3(0.4, 0.7, 1.4);
         #endif
         vec3 noonClearAmbientColor = pow(skyColor, vec3(0.65)) * 0.85;
 
         #ifndef COMPOSITE
-            vec3 sunsetClearLightColor = pow(vec3(0.64, 0.45, 0.3), vec3(1.5 + invNoonFactor)) * 5.0; //ground and cloud color
+            vec3 sunsetClearLightColor = pow(vec3(0.64, 0.45, 0.3), vec3(1.5 + invNoonFactor)) * 5.0;
         #else
-            vec3 sunsetClearLightColor = pow(vec3(0.62, 0.39, 0.24), vec3(1.5 + invNoonFactor)) * 6.8; //light shaft color
+            vec3 sunsetClearLightColor = pow(vec3(0.62, 0.39, 0.24), vec3(1.5 + invNoonFactor)) * 6.8;
         #endif
         vec3 sunsetClearAmbientColor   = noonClearAmbientColor * vec3(1.21, 0.92, 0.76) * 0.95;
 
         #if !defined COMPOSITE && !defined DEFERRED1
-            vec3 nightClearLightColor = vec3(0.15, 0.14, 0.20) * (0.4 + vsBrightness * 0.4); //ground color
+            vec3 nightClearLightColor = vec3(0.15, 0.14, 0.20) * (0.4 + vsBrightness * 0.4);
         #elif defined DEFERRED1
-            vec3 nightClearLightColor = vec3(0.11, 0.14, 0.20); //cloud color
+            vec3 nightClearLightColor = vec3(0.11, 0.14, 0.20);
         #else
-            vec3 nightClearLightColor = vec3(0.07, 0.12, 0.27); //light shaft color
+            vec3 nightClearLightColor = vec3(0.07, 0.12, 0.27);
         #endif
         vec3 nightClearAmbientColor   = vec3(0.09, 0.12, 0.17) * (1.55 + vsBrightness * 0.77);
 
@@ -51,9 +51,9 @@
         vec3 nightRainAmbientColor = vec3(0.16, 0.20, 0.3) * (0.75 + 0.6 * vsBrightness);
 
         #ifndef COMPOSITE
-            float noonFactorDM = noonFactor; //ground and cloud factor
+            float noonFactorDM = noonFactor;
         #else
-            float noonFactorDM = noonFactor * noonFactor; //light shaft factor
+            float noonFactorDM = noonFactor * noonFactor;
         #endif
         vec3 dayLightColor   = mix(sunsetClearLightColor, noonClearLightColor, noonFactorDM);
         vec3 dayAmbientColor = mix(sunsetClearAmbientColor, noonClearAmbientColor, noonFactorDM);
@@ -67,45 +67,49 @@
         vec3 baseLightColor   = mix(clearLightColor, rainLightColor, rainFactor);
         vec3 baseAmbientColor = mix(clearAmbientColor, rainAmbientColor, rainFactor);
 
-        float thicknessMask = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
-        float lightThicknessBoost = mix(1.0, 0.85, thicknessMask);
-        float ambientThicknessBoost = mix(1.0, 0.9, thicknessMask);
 
-        #ifdef USE_SC
+        #if USE_SC
+            float thicknessMask = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+            float lightThicknessBoost   = mix(1.0, 0.85, thicknessMask);
+            float ambientThicknessBoost = mix(1.0, 0.9, thicknessMask);
             #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
+
                 vec3 lightColor   = baseLightColor * lightThicknessBoost;
                 vec3 ambientColor = baseAmbientColor * ambientThicknessBoost;
+
             #else
-                float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-                float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+                    float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+                    float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
 
-                // Better storm normalization (cumulonimbus reference = 0.6)
-                float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
-                float stormCurve = pow(stormNorm, 1.45);
+                    float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
+                    float stormCurve = pow(stormNorm, 1.45);
 
-                // Stronger but natural light dimming
-                float lightDim   = mix(1.0, 0.28, stormCurve);
-                float ambientDim = mix(1.0, 0.40, stormCurve);
+                    float lightDim   = mix(1.0, 0.28, stormCurve);
+                    float ambientDim = mix(1.0, 0.40, stormCurve);
 
-                // Thickness adds even more occlusion
-                float thickDimLight   = mix(1.0, 0.70, thick);
-                float thickDimAmbient = mix(1.0, 0.80, thick);
+                    float thickDimLight   = mix(1.0, 0.70, thick);
+                    float thickDimAmbient = mix(1.0, 0.80, thick);
 
-                vec3 lightColor =
-                    baseLightColor
-                    * mix(1.0, 0.45, scStormDark)
-                    * lightThicknessBoost
-                    * lightDim
-                    * thickDimLight;
+                    vec3 lightColor =
+                        baseLightColor
+                        * mix(1.0, 0.45, scStormDark)
+                        * lightThicknessBoost
+                        * lightDim
+                        * thickDimLight;
 
-                vec3 ambientColor =
-                    baseAmbientColor
-                    * mix(1.0, 0.7, scStormDark)
-                    * ambientThicknessBoost
-                    * ambientDim
-                    * thickDimAmbient;
+                    vec3 ambientColor =
+                        baseAmbientColor
+                        * mix(1.0, 0.7, scStormDark)
+                        * ambientThicknessBoost
+                        * ambientDim
+                        * thickDimAmbient;
+
             #endif
+
         #else
+            float thicknessMask = 0.0;
+            float lightThicknessBoost = 1.0;
+            float ambientThicknessBoost = 1.0;
             vec3 lightColor   = baseLightColor * mix(1.0, 0.45, scStormDark) * lightThicknessBoost;
             vec3 ambientColor = baseAmbientColor * mix(1.0, 0.7, scStormDark) * ambientThicknessBoost;
         #endif

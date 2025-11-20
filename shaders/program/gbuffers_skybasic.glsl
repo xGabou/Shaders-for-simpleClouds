@@ -128,7 +128,7 @@ void main() {
                     sunMoonMixer *= 1.0 - rainFactor2;
                 #endif
 
-                #ifdef USE_SC
+                #if USE_SC
                 {
                     float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
                     float thickRaw = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);

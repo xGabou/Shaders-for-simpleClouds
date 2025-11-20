@@ -114,7 +114,7 @@ void main() {
         color = shadow2D(shadowtex0, vec3(0.5)); // To Activate Shadowmap in Nether
     #endif
 
-    #ifdef USE_SC
+    #if USE_SC
     {
         float scStorm      = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
         float scStormCurve = pow(scStorm, 1.25);

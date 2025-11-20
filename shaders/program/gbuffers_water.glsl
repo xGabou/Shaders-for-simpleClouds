@@ -259,7 +259,7 @@ void main() {
     DoFog(color.rgb, sky, lViewPos, playerPos, VdotU, VdotS, dither);
     color.a *= 1.0 - sky;
 
-    #ifdef USE_SC
+    #if USE_SC
     {
         float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
         float stormCurve = pow(clamp(stormRaw / 0.6, 0.0, 1.0), 1.5);

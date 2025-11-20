@@ -23,7 +23,7 @@ flat in vec4 glColor;
 #ifdef OVERWORLD
 
     float SdotU = dot(sunVec, upVec);
-    #ifdef USE_SC
+    #if USE_SC
         float scDark = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
         float scMask = 1.0 - smoothstep(0.15, 0.35, scDark);
         float sunVisibility  = clamp(SdotU + 0.0625, 0.0, 0.125) / 0.125*scMask;

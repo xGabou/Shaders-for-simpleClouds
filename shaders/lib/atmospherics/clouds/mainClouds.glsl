@@ -90,16 +90,36 @@ vec4 GetClouds(inout float cloudLinearDepth, float skyFade, vec3 cameraPos, vec3
     #endif
 
     vec4 clouds = vec4(0.0);
-    float scThicknessScale = Get_SC_ThicknessScale();
+    float scThicknessScale = 1.0;
+
+    #ifdef USE_SC
+        scThicknessScale = clamp(Get_SC_ThicknessScale(), 0.5, 1.5);
+    #endif
 
     vec3 nPlayerPos = normalize(playerPos);
-    float lViewPosM = lViewPos < renderDistance * 1.5 ? lViewPos - 1.0 : 1000000000.0;
-    float skyMult0 = pow2(skyFade * 3.333333 - 2.333333);
-    skyMult0 *= mix(0.85, 1.25, clamp(scThicknessScale - 0.5, 0.0, 1.0));
 
-    float thresholdMix = pow2(clamp01(VdotU * 5.0));
-    float thresholdF = mix(far, 1000.0, thresholdMix * 0.5 + 0.5);
-    thresholdF *= mix(0.85, 1.2, clamp(scThicknessScale - 0.5, 0.0, 1.0));
+    // view-distance limit for volumetrics
+    float lViewPosM =
+        (lViewPos < renderDistance * 1.5 ? lViewPos - 1.0 : 1000000000.0);
+
+    // base Complementary sky fade multiplier
+    float skyMult0 = pow2(skyFade * 3.333333 - 2.333333);
+
+    // apply SC modulation only when active
+    #ifdef USE_SC
+        skyMult0 *= mix(0.90, 1.15, clamp(scThicknessScale - 1.0, 0.0, 1.0));
+    #endif
+
+
+// cloud distance threshold shaping
+float thresholdMix = pow2(clamp01(VdotU * 5.0));
+float thresholdF = mix(far, 1000.0, thresholdMix * 0.5 + 0.5);
+
+// SC thickness influence only when enabled
+#ifdef USE_SC
+    thresholdF *= mix(0.9, 1.15, clamp(scThicknessScale - 1.0, 0.0, 1.0));
+#endif
+
     #ifdef DISTANT_HORIZONS
         thresholdF = max(thresholdF, renderDistance);
     #endif
@@ -152,8 +172,9 @@ vec4 GetClouds(inout float cloudLinearDepth, float skyFade, vec3 cameraPos, vec3
     #ifdef NIGHT_NEBULA
         clouds.rgb += nightNebula * 0.2;
     #endif
-
-    clouds.rgb = mix(clouds.rgb, clouds.rgb * 0.5, scStormDark);
+    #if USE_SC
+        clouds.rgb = mix(clouds.rgb, clouds.rgb * 0.5, scStormDark);
+    #endif
 
     return clouds;
 }

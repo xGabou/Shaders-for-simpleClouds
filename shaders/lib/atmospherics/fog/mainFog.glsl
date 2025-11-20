@@ -40,7 +40,7 @@
 
             #ifdef OVERWORLD
                 vec3 fogColorM = GetSky(VdotU, VdotS, dither, true, false);
-                #ifdef USE_SC
+                #if USE_SC
                 {
                     float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
                     float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
@@ -187,7 +187,7 @@
 
             #ifdef OVERWORLD
                 vec3 fogColorM = GetAtmFogColor(altitudeFactorRaw, VdotS);
-                #ifdef USE_SC
+                #if USE_SC
                 {
                     float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
                     float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
@@ -212,7 +212,7 @@
             #ifdef MOON_PHASE_INF_ATMOSPHERE
                 fogColorM *= moonPhaseInfluence;
             #endif
-           #ifdef USE_SC
+           #if USE_SC
             {
                 float storm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
 
@@ -317,7 +317,7 @@ void DoFog(inout vec3 color, inout float skyFade, float lViewPos, vec3 playerPos
 
     if (blindness > 0.00001) DoBlindnessFog(color, lViewPos);
     if (darknessFactor > 0.00001) DoDarknessFog(color, lViewPos);
-    // #ifdef USE_SC
+    // #if USE_SC
     // {
     //     float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
     //     float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);

@@ -10,17 +10,31 @@
     vec3 skyColorM = mix(max(skyColorSqrt, vec3(0.63, 0.67, 0.73)), skyColorSqrt, invRainStrength2);
     vec3 skyColorM2 = mix(max(skyColor, sunFactor * vec3(0.265, 0.295, 0.35)), skyColor, invRainStrength2);
 
-    float scThickness = Get_SC_ThicknessRaw();
 
-    float stormDarkSky      = mix(1.0, 0.28, scStormDark);
-    float stormDarkHorizon  = mix(1.0, 0.42, scStormDark * 1.15);
-    float stormCoverage     = clamp(scStormDark * scThickness, 0.0, 1.0);
-    float stormSunFade      = smoothstep(0.08, 0.6, stormCoverage);
-    float stormSunOcclusion = mix(1.0, 0.04, stormSunFade);
 
-    vec3 scStormTint = mix(vec3(1.0), vec3(0.6, 0.64, 0.72), scStormDark);
-    float scStormBrightness = mix(1.0, 0.55, scStormDark);
-    float scThicknessBlend = mix(0.95, 1.05, scThickness);
+    #if USE_SC
+        float scThickness = Get_SC_ThicknessRaw();
+
+        float stormDarkSky      = mix(1.0, 0.28, scStormDark);
+        float stormDarkHorizon  = mix(1.0, 0.42, scStormDark * 1.15);
+        float stormCoverage     = clamp(scStormDark * scThickness, 0.0, 1.0);
+        float stormSunFade      = smoothstep(0.08, 0.6, stormCoverage);
+        float stormSunOcclusion = mix(1.0, 0.04, stormSunFade);
+
+        vec3 scStormTint = mix(vec3(1.0), vec3(0.6, 0.64, 0.72), scStormDark);
+        float scStormBrightness = mix(1.0, 0.55, scStormDark);
+        float scThicknessBlend = mix(0.95, 1.05, scThickness);
+    #else
+        float scThickness = 0.0;
+        float stormDarkSky = 1.0;
+        float stormDarkHorizon = 1.0;
+        float stormCoverage = 0.0;
+        float stormSunFade = 0.0;
+        float stormSunOcclusion = 1.0;
+        vec3 scStormTint = vec3(1.0);
+        float scStormBrightness = 1.0;
+        float scThicknessBlend = 1.0;
+    #endif
 
     #ifdef SPECIAL_BIOME_WEATHER
         vec3 nmscSnowM = inSnowy * vec3(-0.3, 0.05, 0.2);

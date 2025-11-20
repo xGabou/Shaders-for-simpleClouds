@@ -8,6 +8,8 @@
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
 
+#include "/lib/util/sc_bridge.glsl"
+
 in vec2 texCoord;
 
 in vec4 glColor;

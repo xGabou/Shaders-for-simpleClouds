@@ -181,7 +181,7 @@ void main() {
     #ifdef COLOR_CODED_PROGRAMS
         ColorCodeProgram(color, -1);
     #endif
-    #ifdef USE_SC
+    #if USE_SC
     {
         float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
 

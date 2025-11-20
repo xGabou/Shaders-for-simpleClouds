@@ -4,8 +4,8 @@
 
 //Common//
 #include "/lib/common.glsl"
-#define APPLY_SC_CLOUD_SHADOWS
 #include "/lib/util/sc_bridge.glsl"
+#define APPLY_SC_CLOUD_SHADOWS
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
@@ -164,9 +164,9 @@ void main() {
         #endif
     }
 
-    #ifdef USE_SC
+    #if USE_SC
     {
-        float scShadow = clamp(Get_SC_FinalShadow(), 0.0, 1.0);
+        float scShadow = clamp(1.0, 0.0, 1.0);
         vec3 skyGlow = mix(ambientColor, skyColor * 1.2, 0.5) * 0.6;
         color.rgb = mix(color.rgb, mix(color.rgb, skyGlow, 0.7), scShadow * 0.5);
     }
@@ -175,7 +175,7 @@ void main() {
     #ifdef COLOR_CODED_PROGRAMS
         ColorCodeProgram(color, -1);
     #endif
-    #ifdef USE_SC
+    #if USE_SC
     {
         float scStorm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
         color.rgb *= mix(1.0, 0.85, scStorm);

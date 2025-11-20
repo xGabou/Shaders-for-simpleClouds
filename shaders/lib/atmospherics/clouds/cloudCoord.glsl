@@ -15,7 +15,7 @@
     }
 
     vec3 ModifyTracePos(vec3 tracePos, int cloudAltitude) {
-    #ifdef USE_SC
+    #if USE_SC
         return tracePos;
     #endif
 

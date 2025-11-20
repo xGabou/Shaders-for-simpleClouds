@@ -34,7 +34,7 @@ float farMinusNear = far - near;
 vec2 view = vec2(viewWidth, viewHeight);
 
 #ifdef OVERWORLD
-    #ifdef USE_SC
+    #if USE_SC
         float scStorm     = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
         float scThick     = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
         float scCoverage  = clamp(max(scStorm, scThick), 0.0, 1.0);
@@ -224,14 +224,14 @@ void main() {
 
     float VdotU = dot(nViewPos, upVec);
     float VdotS = dot(nViewPos, sunVec);
-    float scRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-    float scMask = step(0.08, scRaw);              // 1 = storm, 0 = normal
-    float scDisable = scMask * scRaw;              // progressive darkening
-
-    sunFactor     *= (1.0 - scDisable);
-    sunVisibility *= (1.0 - scDisable);
-    sunVisibility2*= (1.0 - scDisable);
-
+    #if USE_SC
+        float scRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+        float scMask = step(0.08, scRaw);              // 1 = storm, 0 = normal
+        float scDisable = scMask * scRaw;              // progressive darkening
+        sunFactor     *= (1.0 - scDisable);
+        sunVisibility *= (1.0 - scDisable);
+        sunVisibility2*= (1.0 - scDisable);
+    #endif
     float skyFade = 0.0;
     vec3 waterRefColor = vec3(0.0);
     vec3 auroraBorealis = vec3(0.0);
@@ -429,10 +429,19 @@ void main() {
 
         DoFog(color, skyFade, lViewPos, playerPos, VdotU, VdotS, dither);
         #ifdef OVERWORLD
+
+        #if USE_SC
             float scStorm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
             float scThick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
-            float scCoverage = clamp(max(scStorm, scThick), 0.0, 1.0);
-            float scCloudShadow = smoothstep(0.25, 0.85, scCoverage);
+
+            // Shadow on ground
+            float scCloudShadow = smoothstep(0.25, 0.85, max(scStorm, scThick));
+
+            // Volume shading when INSIDE a cloud
+            float scInside = smoothstep(0.15, 0.45, scThick);
+
+            // Combined storm + inside darkness
+            float scTotalDark = max(scCloudShadow, scInside * 0.8);
 
             vec3 worldPos = cameraPosition + playerPos;
             float lightningPresence = step(0.5, lightningBoltPosition.w);
@@ -441,14 +450,42 @@ void main() {
             float lightningFlash = lightningPresence * lightningReach * smoothstep(0.4, 0.95, rainStrength);
             float lightningGlow = lightningFlash * exp(-lightningDistance * 0.01);
 
-            color *= mix(vec3(1.0), vec3(0.3, 0.33, 0.38), scCloudShadow);
+            // Apply darkening → SC-like storm and volume fog
+            color *= mix(vec3(1.0), vec3(0.3, 0.33, 0.38), scTotalDark);
             color += lightningFlash * vec3(0.6, 0.7, 0.9);
             color += lightningGlow * vec3(0.2, 0.24, 0.28);
 
-            waterRefColor *= mix(1.0, 0.25, scCloudShadow);
+            waterRefColor *= mix(1.0, 0.25, scTotalDark);
             waterRefColor += lightningFlash * vec3(0.45, 0.55, 0.7);
             waterRefColor += lightningGlow * vec3(0.25, 0.35, 0.45);
+
+        #else
+
+                // Fallback when SC is NOT available
+                // Use Complementary's classic storm dimming so world brightness stays natural
+
+                float rainDark  = clamp(rainStrength, 0.0, 1.0);
+                float stormDark = smoothstep(0.2, 0.95, rainDark);
+
+                vec3 worldPos = cameraPosition + playerPos;
+                float lightningPresence = step(0.5, lightningBoltPosition.w);
+                float lightningDistance = length(lightningBoltPosition.xyz - worldPos);
+                float lightningReach = 1.0 - smoothstep(40.0, 200.0, lightningDistance);
+                float lightningFlash = lightningPresence * lightningReach * smoothstep(0.4, 0.95, rainStrength);
+                float lightningGlow = lightningFlash * exp(-lightningDistance * 0.01);
+
+                // Classic dusk-like horizon tint, not pitch-black
+                color *= mix(vec3(1.0), vec3(0.55, 0.57, 0.60), stormDark);
+                color += lightningFlash * vec3(0.6, 0.7, 0.9);
+                color += lightningGlow * vec3(0.2, 0.24, 0.28);
+
+                waterRefColor *= mix(1.0, 0.55, stormDark);
+                waterRefColor += lightningFlash * vec3(0.45, 0.55, 0.7);
+                waterRefColor += lightningGlow * vec3(0.25, 0.35, 0.45);
+            #endif
+
         #endif
+
     } else { // Sky
         #ifdef DISTANT_HORIZONS
             float z0DH = texelFetch(dhDepthTex, texelCoord, 0).r;
@@ -597,7 +634,7 @@ void main() {
 
         #ifdef END
             if (frameCounter % int(0.06666 / frameTimeSmooth + 0.5) == 0) { // Change speed is not too different above 10 fps
-                vec2 absCamPosXZ = abs(gbufferModelViewInverse[3].xz);
+                vec2 absCamPosXZ = abs(cameraPosition.xz);
                 float maxCamPosXZ = max(absCamPosXZ.x, absCamPosXZ.y);
 
                 if (gl_Fog.start / far > 0.5 || maxCamPosXZ > 350.0) vlFactor = max(vlFactor - OSIEBCA*2, 0.0);

@@ -104,7 +104,7 @@ void main() {
     vec3 normalM = normal;
 
     float alphaCheck = color.a;
-    if (alphaCheck > 0.0001) {
+    if (alphaCheck > 0.00001) {
         vec3 screenPos = vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), gl_FragCoord.z);
         vec3 viewPos = ScreenToView(screenPos);
         vec3 nViewPos = normalize(viewPos);
@@ -178,13 +178,13 @@ void main() {
         ColorCodeProgram(color, -1);
     #endif
 
-    #ifdef USE_SC
+    #if USE_SC
     {
         float scStorm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
         color.rgb *= mix(1.0, 0.85, scStorm);
     }
     #endif
-    // #ifdef USE_SC
+    // #if USE_SC
     // {
     //     float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
     //     float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
@@ -250,6 +250,7 @@ out vec4 glColor;
 //Includes//
 
 //Program//
+
 void main() {
     gl_Position = ftransform();
 

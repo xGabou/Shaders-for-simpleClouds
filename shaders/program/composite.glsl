@@ -227,16 +227,30 @@ void main() {
         vec3 viewDir = normalize(viewPos.xyz);
         float horizonMask = smoothstep(0.02, 0.45, 1.0 - abs(viewDir.y));
         if (horizonMask > 0.0001) {
-            float stormMask = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+
+            float stormMask;
+
+            #if USE_SC
+                stormMask = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+            #else
+                stormMask = clamp(rainFactor, 0.0, 1.0); // fallback when SC is off
+            #endif
+
             float absoluteHeight = worldPos0.y + cameraPosition.y;
-            float heightFade = AtmosphericHeightFade(max(absoluteHeight, 0.0), 0.008, 1.0 + 0.6 * stormMask);
+
+            float heightFade = AtmosphericHeightFade(
+                max(absoluteHeight, 0.0),
+                0.008,
+                1.0 + 0.6 * stormMask
+            );
+
             float invRain = 1.0 - clamp(rainFactor, 0.0, 1.0);
             float dayBlend = smoothstep(-0.2, 0.2, SdotU);
             float nightBlend = 1.0 - dayBlend;
             float sunriseBlend = smoothstep(0.35, 0.95, 1.0 - abs(SdotU)) * dayBlend;
 
-            vec3 warmTone = vec3(0.85, 0.46, 0.28);
-            vec3 coolTone = vec3(0.16, 0.24, 0.40);
+            vec3 warmTone  = vec3(0.85, 0.46, 0.28);
+            vec3 coolTone  = vec3(0.16, 0.24, 0.40);
             vec3 stormTone = vec3(0.22, 0.28, 0.32);
 
             vec3 blendedTone = warmTone * sunriseBlend + coolTone * nightBlend;
@@ -244,8 +258,10 @@ void main() {
 
             float horizonWeight = horizonMask * heightFade * (0.35 + 0.4 * invRain);
             horizonWeight *= mix(1.0, 1.65, stormMask);
+
             color = mix(color, color + blendedTone * horizonWeight, horizonWeight);
         }
+
     }
     #endif
 #endif
@@ -275,7 +291,7 @@ void main() {
     #endif
 
     color = pow(color, vec3(2.2));
-    #ifdef USE_SC
+    #if USE_SC
     {
         float scStorm    = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
         float scThick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);

@@ -17,7 +17,7 @@ vec3 GetLightColorMult() {
         vec3 rainTint = dot(baseMult, vec3(0.33333)) * rain;
         baseMult = mix(baseMult, rainTint, rainFactor);
 
-        #ifdef USE_SC
+        #if USE_SC
             #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
                 // Entities keep their original multipliers to avoid "dark mode".
             #else
@@ -59,7 +59,7 @@ vec3 GetAtmColorMult() {
         vec3 rainTint = dot(baseMult, vec3(0.33333)) * rain;
         baseMult = mix(baseMult, rainTint, rainFactor);
 
-        #ifdef USE_SC
+        #if USE_SC
             #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
                 // Keep ambient tint intact for entity-style passes.
             #else

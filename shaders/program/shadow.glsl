@@ -4,8 +4,6 @@
 
 //Common//
 #include "/lib/common.glsl"
-uniform vec3 cameraPosition;
-uniform vec3 cameraPosition;
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
@@ -64,26 +62,38 @@ float SampleProceduralCloudDensity(vec3 worldPos, float coverage) {
     return density * heightMask;
 }
 
-float GetCloudShadowMask(vec3 worldPos, vec3 sunDirection) {
-    float scStorm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-    float scThick = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
-    float coverage = max(max(scStorm, scThick), rainFactor);
-    if (coverage < 0.05) return 0.0;
+    #if USE_SC
 
-    vec3 dir = normalize(sunDirection);
-    float opacity = 0.0;
-    const float stepLength = 18.0;
+        float GetCloudShadowMask(vec3 worldPos, vec3 sunDirection) {
+            float scStorm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+            float scThick = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+            float coverage = max(max(scStorm, scThick), rainFactor);
 
-    for (int i = 0; i < 6; i++) {
-        worldPos += dir * stepLength;
-        float density = SampleProceduralCloudDensity(worldPos, coverage);
-        opacity += density * stepLength * 0.015;
-        if (opacity >= 1.0) break;
-    }
+            if (coverage < 0.05) return 0.0;
 
-    opacity *= coverage;
-    return clamp(opacity, 0.0, 1.0);
-}
+            vec3 dir = normalize(sunDirection);
+            float opacity = 0.0;
+            const float stepLength = 18.0;
+
+            for (int i = 0; i < 6; i++) {
+                worldPos += dir * stepLength;
+                float density = SampleProceduralCloudDensity(worldPos, coverage);
+                opacity += density * stepLength * 0.015;
+                if (opacity >= 1.0) break;
+            }
+
+            opacity *= coverage;
+            return clamp(opacity, 0.0, 1.0);
+        }
+
+    #else
+
+        float GetCloudShadowMask(vec3 worldPos, vec3 sunDirection) {
+            return 0.0;
+        }
+
+    #endif
+
 #endif
 
 //Program//

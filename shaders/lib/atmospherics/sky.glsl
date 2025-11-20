@@ -47,8 +47,9 @@
             finalSky = mix(finalSky, downColor, scatteredGroundMixer);
         //
 
-        finalSky *= mix(1.0, 0.45, scStormDark);
-
+        #if USE_SC
+            finalSky *= mix(1.0, 0.45, scStormDark);
+        #endif
         // Sky Ground
         if (doGround)
             finalSky *= smoothstep1(pow2(1.0 + min(VdotU, 0.0)));
@@ -77,7 +78,7 @@
             }
         }
         /* ===== SIMPLE CLOUDS SKY DARKENING ===== */
-        #ifdef USE_SC
+        #if USE_SC
         {
             float stormRaw = clamp(scStormDark, 0.0, 1.0);
 

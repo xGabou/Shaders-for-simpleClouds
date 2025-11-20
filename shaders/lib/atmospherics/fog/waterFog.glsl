@@ -17,7 +17,7 @@
 
         float result = 1.0 - exp(-fog);
 
-        #ifdef USE_SC
+        #if USE_SC
         {
             float scDark  = mix(1.0, 0.40, Get_SC_StormDarkness());
             float scThick = mix(1.0, 0.70, Get_SC_ThicknessRaw());

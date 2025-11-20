@@ -173,7 +173,7 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
                 vec3 skyReflection = GetLowQualitySky(RVdotU, RVdotS, dither, true, true);
             #endif
 
-            #ifdef USE_SC
+            #if USE_SC
             {
                 float storm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
                 float thick = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
@@ -206,7 +206,7 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
             #endif
 
             #ifdef DEFERRED1
-                #ifdef USE_SC
+                #if USE_SC
                     float storm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
                     float stormLightFade = 1.0 - smoothstep(0.20, 0.70, storm);
                     float forcedSkyLight = skyLightFactor * stormLightFade;
@@ -218,7 +218,7 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
             #else
                 float specularHighlight = GGX(normalM, nViewPos, lightVec, max(dot(normalM, lightVec), 0.0), smoothness);
 
-                #ifdef USE_SC
+                #if USE_SC
                     // Reduce sun glints on water when clouds cast heavy shadows
                     float scShadow = clamp(Get_SC_FinalShadow(), 0.0, 1.0);
                     float scGlareFade = 1.0 - smoothstep(0.25, 0.85, scShadow);

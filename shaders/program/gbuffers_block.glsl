@@ -41,23 +41,46 @@ in vec4 glColor;
 float NdotU = dot(normal, upVec);
 float NdotUmax0 = max(NdotU, 0.0);
 float SdotU = dot(sunVec, upVec);
-float scRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-float scDisable = step(0.08, scRaw); // 1.0 if storm, 0.0 if not
-float mask = 1.0 - scDisable;
+#ifdef USE_SC
 
-float sunFactor =
-    (SdotU < 0.0
-        ? clamp(SdotU + 0.375, 0.0, 0.75) / 0.75
-        : clamp(SdotU + 0.03125, 0.0, 0.0625) / 0.0625)
-    * mask;
+    float scRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
 
-float sunVisibility =
-    (clamp(SdotU + 0.0625, 0.0, 0.125) / 0.125)
-    * mask;
+    // Smooth dimming curve when SC is active
+    float stormDim = mix(
+        1.0,        // clear sky (no dim)
+        0.12,       // max dim under heavy cumulonimbus
+        pow(scRaw, 1.3)  // smooth non-linear dimming
+    );
 
-float sunVisibility2 =
-    (sunVisibility * sunVisibility)
-    * mask;
+    // Base Complementary solar curves
+    float baseSunFactor =
+        (SdotU < 0.0
+            ? clamp(SdotU + 0.375, 0.0, 0.75) / 0.75
+            : clamp(SdotU + 0.03125, 0.0, 0.0625) / 0.0625);
+
+    float baseSunVisibility =
+        clamp(SdotU + 0.0625, 0.0, 0.125) / 0.125;
+
+    // Apply SC dimming
+    float sunFactor      = baseSunFactor      * stormDim;
+    float sunVisibility  = baseSunVisibility  * stormDim;
+    float sunVisibility2 = baseSunVisibility * baseSunVisibility * stormDim;
+
+#else
+
+    // Vanilla Complementary behaviour when SC is not active
+    float sunFactor =
+        (SdotU < 0.0
+            ? clamp(SdotU + 0.375, 0.0, 0.75) / 0.75
+            : clamp(SdotU + 0.03125, 0.0, 0.0625) / 0.0625);
+
+    float sunVisibility =
+        clamp(SdotU + 0.0625, 0.0, 0.125) / 0.125;
+
+    float sunVisibility2 = sunVisibility * sunVisibility;
+
+#endif
+
 
 
 
@@ -193,17 +216,17 @@ void main() {
     #ifdef COLOR_CODED_PROGRAMS
         ColorCodeProgram(color, blockEntityId);
     #endif
-    // #ifdef USE_SC
-    // {
-    //     float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-    //     float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
-    //     float stormCurve = pow(stormN, 2.5);
+    #if USE_SC
+    {
+        float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+        float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
+        float stormCurve = pow(stormN, 2.5);
 
-    //     float scDarkFactor = mix(1.0, 0.15, stormCurve);
-    //     color.rgb *= scDarkFactor;
-    // }
-    // #endif
-    #ifdef USE_SC
+        float scDarkFactor = mix(1.0, 0.15, stormCurve);
+        color.rgb *= scDarkFactor;
+    }
+    #endif
+    #if USE_SC
     {
         float scStorm      = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
         float scStormCurve = pow(scStorm, 1.25);

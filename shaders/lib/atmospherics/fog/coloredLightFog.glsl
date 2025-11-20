@@ -46,7 +46,7 @@ vec3 GetColoredLightFog(vec3 nPlayerPos, vec3 translucentMult, float lViewPos, f
     #endif
 
     lightFog *= 1.0 - maxBlindnessDarkness;
-    #ifdef USE_SC
+    #if USE_SC
     {
         float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
 
