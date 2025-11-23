@@ -4,6 +4,7 @@
 
 //Common//
 #include "/lib/common.glsl"
+#include "/lib/util/sc_bridge.glsl"
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
@@ -133,6 +134,20 @@ void main() {
     DoLighting(color, shadowMult, playerPos, viewPos, lViewPos, geoNormal, normalM, 0.5,
                worldGeoNormal, lmCoordM, noSmoothLighting, noDirectionalShading, noVanillaAO,
                centerShadowBias, subsurfaceMode, smoothnessG, highlightMult, emission);
+
+    #if USE_SC
+    {
+        float scStorm     = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
+        float scStormCurve = pow(scStorm, 1.35);
+        float scThick      = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+        float scThickCurve = pow(scThick, 1.2);
+
+        float scDarkFactor = mix(1.0, 0.2, scStormCurve);
+        scDarkFactor *= mix(1.0, 0.75, scThickCurve);
+
+        color.rgb *= scDarkFactor;
+    }
+    #endif
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = color;
 }
