@@ -77,6 +77,17 @@ void DoBSLColorSaturation(inout vec3 color) {
 
         float bloomStrength = BLOOM_STRENGTH + 0.2 * darknessFactor;
 
+        #ifdef OVERWORLD
+            float nightRainMask = smoothstep(0.12, 0.9, nightFactor) * smoothstep(0.2, 1.0, rainFactor);
+            float bloomDistanceMask = smoothstep(96.0, 280.0, lViewPos);
+            bloomStrength *= mix(1.0, 0.42, nightRainMask * bloomDistanceMask);
+
+            // Stop bloom from lifting dark geometry edges against bright fog/light.
+            float localLum = GetLuminance(max(color, vec3(0.0)));
+            float darkPixelMask = smoothstep(0.05, 0.22, localLum);
+            bloomStrength *= darkPixelMask;
+        #endif
+
         #if defined BLOOM_FOG && defined NETHER && defined BORDER_FOG
             float farM = min(renderDistance, NETHER_VIEW_LIMIT); // consistency9023HFUE85JG
             float netherBloom = lViewPos / clamp(farM, 96.0, 256.0);

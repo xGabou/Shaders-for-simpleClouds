@@ -44,8 +44,9 @@ void DoDarkOutline(inout vec3 color, inout float skyFade, float z0, float dither
         float VdotU = dot(nViewPos, upVec);
         float VdotS = dot(nViewPos, sunVec);
 
-        vec3 newColor = vec3(0.0);
+        vec3 newColor = color;
         DoFog(newColor, skyFade, lViewPos, playerPos, VdotU, VdotS, dither);
+        newColor = min(newColor, color);
 
         color = mix(color, newColor, 1.0 - outline * 1.1);
     }

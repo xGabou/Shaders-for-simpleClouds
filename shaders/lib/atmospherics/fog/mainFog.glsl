@@ -4,6 +4,27 @@
 #ifdef MOON_PHASE_INF_ATMOSPHERE
     #include "/lib/colors/moonPhaseInfluence.glsl"
 #endif
+
+vec3 ClampFogGlow(vec3 sceneColor, vec3 fogColor, float fogAmount) {
+    #ifdef OVERWORLD
+        float sceneLum = GetLuminance(max(sceneColor, vec3(0.0)));
+        float fogLum = GetLuminance(max(fogColor, vec3(0.0)));
+        float lift = max0(fogLum - sceneLum);
+
+        float antiGlow = smoothstep(0.12, 0.9, nightFactor);
+        antiGlow *= 0.35 + 0.65 * rainFactor;
+        antiGlow *= smoothstep(0.05, 0.35, fogAmount);
+        antiGlow *= smoothstep(0.015, 0.22, lift);
+
+        if (antiGlow > 0.0) {
+            float targetLum = sceneLum + 0.02;
+            float scale = min(1.0, targetLum / max(fogLum, 0.0001));
+            fogColor *= mix(1.0, scale, antiGlow);
+        }
+    #endif
+
+    return fogColor;
+}
 #ifdef BORDER_FOG
     #ifdef OVERWORLD
         #include "/lib/atmospherics/sky.glsl"
@@ -39,6 +60,16 @@
             fog = clamp(fog, 0.0, 1.0);
 
             #ifdef OVERWORLD
+                float nightRain = smoothstep(0.12, 0.85, nightFactor) * smoothstep(0.2, 1.0, rainFactor);
+                fog *= mix(1.0, 0.7, nightRain);
+
+                // Push border fog farther away so ground/near terrain is not lifted.
+                float distanceGate = smoothstep(140.0, 380.0, lPos);
+                fog *= distanceGate;
+                fog = min(fog, 0.45);
+            #endif
+
+            #ifdef OVERWORLD
                 vec3 fogColorM = GetSky(VdotU, VdotS, dither, true, false);
                 #if USE_SC
                 {
@@ -70,6 +101,11 @@
                 fogColorM *= moonPhaseInfluence;
             #endif
 
+            fogColorM = ClampFogGlow(color, fogColorM, fog);
+            #ifdef OVERWORLD
+                // Prevent bright atmospheric tint from washing dark night terrain.
+                fogColorM = min(fogColorM, color + vec3(0.03));
+            #endif
             color = mix(color, fogColorM, fog);
 
             #ifndef GBUFFERS_WATER
@@ -186,6 +222,16 @@
             fog = clamp(fog, 0.0, 1.0);
 
             #ifdef OVERWORLD
+                float nightRain = smoothstep(0.12, 0.9, nightFactor) * smoothstep(0.2, 1.0, rainFactor);
+                fog *= mix(1.0, 0.75, nightRain);
+
+                // Strong distance gate for aerial perspective to avoid white floor glow.
+                float distanceGate = smoothstep(120.0, 360.0, lViewPos);
+                fog *= distanceGate;
+                fog = min(fog, 0.40);
+            #endif
+
+            #ifdef OVERWORLD
                 vec3 fogColorM = GetAtmFogColor(altitudeFactorRaw, VdotS);
                 #if USE_SC
                 {
@@ -244,6 +290,10 @@
             #endif
 
 
+            fogColorM = ClampFogGlow(color, fogColorM, fog);
+            #ifdef OVERWORLD
+                fogColorM = min(fogColorM, color + vec3(0.025));
+            #endif
             color = mix(color, fogColorM, fog);
         }
     }

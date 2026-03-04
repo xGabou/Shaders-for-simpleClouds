@@ -86,8 +86,15 @@ void main() {
 
         vec2 screenUV = gl_FragCoord.xy / view;
         float sceneDepth = texture2D(depthtex0, screenUV).r;
+        float rainLinear = GetLinearDepth(gl_FragCoord.z);
+        float rainDistance = rainLinear * farMinusNear;
+        float farRainMask = smoothstep(72.0, 240.0, rainDistance);
+
+        // Reduce distant rain veil / white blotches on the horizon.
+        color.a *= mix(1.0, 0.28, farRainMask);
+        color.rgb *= mix(1.0, 0.72, farRainMask);
+
         if (sceneDepth < 0.9999) {
-            float rainLinear = GetLinearDepth(gl_FragCoord.z);
             float sceneLinear = GetLinearDepth(sceneDepth);
             float depthDelta = abs(sceneLinear - rainLinear) * farMinusNear;
             float proximity = exp(-depthDelta * 0.6);
@@ -121,9 +128,9 @@ void main() {
         scOpacity *= mix(1.0, 1.25, thick);
         color.a = clamp(color.a * scOpacity + stormCurve * 0.15, 0.0, 1.0);
 
-        // Hard-cap opacity during intense storms so sun discs can't show through
+        // Keep very strong storms opaque, but avoid full-white rain sheets at distance.
         if (stormCurve > 0.55 || rainFactor > 0.85) {
-            color.a = 1.0;
+            color.a = max(color.a, 0.72);
         }
 
     }

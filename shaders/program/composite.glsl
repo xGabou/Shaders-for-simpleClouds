@@ -104,6 +104,7 @@ void main() {
     #endif
     float z0 = texelFetch(depthtex0, texelCoord, 0).r;
     float z1 = texelFetch(depthtex1, texelCoord, 0).r;
+    bool isSkyPixel = z0 > 0.999999;
 
     vec4 screenPos = vec4(texCoord, z0, 1.0);
     vec4 viewPos = gbufferProjectionInverse * (screenPos * 2.0 - 1.0);
@@ -221,10 +222,11 @@ void main() {
         ApplyWetSurfaceOverlay(color, texCoord, viewPos.xyz, worldPos0, z0, lViewPos, sunFactor);
     #endif
 
-    #ifdef OVERWORLD
+#ifdef OVERWORLD
     #if ATM_COLOR_GRADE == 1
     {
         vec3 viewDir = normalize(viewPos.xyz);
+        float depthAtmosMask = isSkyPixel ? 1.0 : smoothstep(56.0, 220.0, lViewPos);
         float horizonMask = smoothstep(0.02, 0.45, 1.0 - abs(viewDir.y));
         if (horizonMask > 0.0001) {
 
@@ -236,7 +238,7 @@ void main() {
                 stormMask = clamp(rainFactor, 0.0, 1.0); // fallback when SC is off
             #endif
 
-            float absoluteHeight = worldPos0.y + cameraPosition.y;
+            float absoluteHeight = isSkyPixel ? (cameraPosition.y + eyeAltitude) : (worldPos0.y + cameraPosition.y);
 
             float heightFade = AtmosphericHeightFade(
                 max(absoluteHeight, 0.0),
@@ -258,8 +260,9 @@ void main() {
 
             float horizonWeight = horizonMask * heightFade * (0.35 + 0.4 * invRain);
             horizonWeight *= mix(1.0, 1.65, stormMask);
+            horizonWeight *= depthAtmosMask;
 
-            color = mix(color, color + blendedTone * horizonWeight, horizonWeight);
+            color += blendedTone * horizonWeight;
         }
 
     }
@@ -276,16 +279,18 @@ void main() {
 
         vec2 chromaOffset = (texCoord - 0.5) * 0.0009;
         float highlightMask = smoothstep(1.2, 4.0, max(color.r, max(color.g, color.b)));
+        float chromaDepthMask = isSkyPixel ? 1.0 : smoothstep(96.0, 280.0, lViewPos);
         if (highlightMask > 0.0001) {
             vec3 chromaColor;
             chromaColor.r = texture2D(colortex0, clamp(texCoord + chromaOffset, vec2(0.001), vec2(0.999))).r;
             chromaColor.g = color.g;
             chromaColor.b = texture2D(colortex0, clamp(texCoord - chromaOffset, vec2(0.001), vec2(0.999))).b;
-            color = mix(color, chromaColor, highlightMask * 0.15);
+            color = mix(color, chromaColor, highlightMask * 0.15 * chromaDepthMask);
         }
 
-        if (z0 == 1.0) {
-            float thicknessFade = AtmosphericHeightFade(max(worldPos0.y + cameraPosition.y, 0.0), 0.01, 1.0 + 0.6 * GetStormActivity());
+        if (isSkyPixel) {
+            float skyHeight = cameraPosition.y + eyeAltitude;
+            float thicknessFade = AtmosphericHeightFade(max(skyHeight, 0.0), 0.01, 1.0 + 0.6 * GetStormActivity());
             color = mix(color, color * thicknessFade, 0.2);
         }
     #endif
@@ -325,12 +330,13 @@ void main() {
 
         float heatMask = smoothstep(0.65, 1.0, inDry) * smoothstep(0.4, 0.9, sunFactor) * (1.0 - rainFactor);
         if (heatMask > 0.0) {
+            float heatDepthMask = isSkyPixel ? 1.0 : smoothstep(72.0, 220.0, lViewPos);
             vec2 hazeOffset = vec2(
                 sin(frameTimeCounter * 0.8 + texCoord.y * 120.0),
                 cos(frameTimeCounter * 0.6 + texCoord.x * 90.0)
             ) * 0.0008 * heatMask;
             vec3 hazeColor = texture2D(colortex0, clamp(texCoord + hazeOffset, vec2(0.001), vec2(0.999))).rgb;
-            color = mix(color, hazeColor, heatMask * 0.2);
+            color = mix(color, hazeColor, heatMask * 0.2 * heatDepthMask);
         }
 
         float nightSilhouette = smoothstep(0.0, 0.08, 0.08 - sunVisibility);

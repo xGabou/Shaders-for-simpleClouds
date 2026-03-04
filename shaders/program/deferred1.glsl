@@ -583,11 +583,19 @@ void main() {
         #ifdef OVERWORLD
             atmFogColor *= scSkyDim;
         #endif
-        color = mix(color, atmFogColor, 0.5 * rainFactor * factor * sqrt1(skyFade));
+        float rainAerialMix = 0.5 * rainFactor * factor * sqrt1(skyFade);
+
+        // Hard test: disable this contribution on world geometry.
+        if (z0 < 0.999999) {
+            rainAerialMix = 0.0;
+            atmFogColor = color;
+        }
+
+        color = mix(color, atmFogColor, clamp(rainAerialMix, 0.0, 0.35));
     #endif
 
     #ifdef DARK_OUTLINE
-        if (clouds.a < 0.5) DoDarkOutline(color, skyFade, z0, dither);
+        if (clouds.a < 0.5 && z0 > 0.999999) DoDarkOutline(color, skyFade, z0, dither);
     #endif
 
     /*DRAWBUFFERS:054*/
