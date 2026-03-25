@@ -37,7 +37,6 @@ float GetBloomFog(float lViewPos) {
     #endif
 
     bloomFogMult *= BLOOM_STRENGTH * 8.33333;
-        bloomFogMult *= BLOOM_STRENGTH * 8.33333;
 
     /* ====== SIMPLE CLOUDS STORM DARKNESS INTEGRATION ====== */
     #if USE_SC

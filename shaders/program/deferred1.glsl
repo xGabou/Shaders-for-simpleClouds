@@ -243,15 +243,31 @@ void main() {
 
     if (z0 < 1.0) {
         #ifdef DISTANT_LIGHT_BOKEH
+            const bool DEBUG_STORM_GLOW_DLB = false; // temporary diagnostic
             int dlbo = 1;
-            vec3 dlbColor = color;
+            vec3 baseDlb = color;
+            vec3 dlbColor = baseDlb;
             dlbColor += texelFetch(colortex0, texelCoord + ivec2( 0, dlbo), 0).rgb;
             dlbColor += texelFetch(colortex0, texelCoord + ivec2( 0,-dlbo), 0).rgb;
             dlbColor += texelFetch(colortex0, texelCoord + ivec2( dlbo, 0), 0).rgb;
             dlbColor += texelFetch(colortex0, texelCoord + ivec2(-dlbo, 0), 0).rgb;
-            dlbColor = max(color, dlbColor * 0.2);
+            dlbColor = max(baseDlb, dlbColor * 0.2);
             float dlbMix = GetDistantLightBokehMix(lViewPos);
-            color = mix(color, dlbColor, dlbMix);
+
+            #ifdef OVERWORLD
+                // Storm/rain should not create long-distance glow halos around lit pixels.
+                float rainSuppress = smoothstep(0.25, 0.95, rainFactor);
+                dlbMix *= 1.0 - 0.9 * rainSuppress;
+            #endif
+
+            vec3 dlbOut = mix(baseDlb, dlbColor, dlbMix);
+            if (DEBUG_STORM_GLOW_DLB && rainFactor > 0.2) {
+                // Recolor only DLB-added energy to identify this pass in-game.
+                vec3 dlbAdd = max(dlbOut - baseDlb, vec3(0.0));
+                color = baseDlb + dlbAdd * vec3(0.08, 1.6, 0.08);
+            } else {
+                color = dlbOut;
+            }
         #endif
 
         #if SSAO_QUALI > 0 || defined WORLD_OUTLINE || defined TEMPORAL_FILTER

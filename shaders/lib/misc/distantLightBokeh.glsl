@@ -1,6 +1,14 @@
 float GetDistantLightBokehMix(float lViewPos) {
     //if (heldItemId == 40000 || heldItemId2 == 40000) return 0.0; // Hold spider eye to disable;
-    return clamp01(0.005 * (lViewPos - 60.0));
+    float dlbMix = clamp01(0.005 * (lViewPos - 60.0));
+
+    #ifdef OVERWORLD
+        // During rain/storms this effect produces artificial distant glow halos.
+        float rainSuppress = smoothstep(0.25, 0.95, rainFactor);
+        dlbMix *= 1.0 - 0.9 * rainSuppress;
+    #endif
+
+    return dlbMix;
 }
 
 #ifdef GBUFFERS_TERRAIN

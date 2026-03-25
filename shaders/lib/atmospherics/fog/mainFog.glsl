@@ -5,6 +5,22 @@
     #include "/lib/colors/moonPhaseInfluence.glsl"
 #endif
 
+const bool DEBUG_STORM_GLOW_FOG = false;
+
+vec3 ApplyFogMixDebug(vec3 sceneColor, vec3 fogColor, float fogAmount) {
+    vec3 mixed = mix(sceneColor, fogColor, fogAmount);
+
+    #ifdef OVERWORLD
+        if (DEBUG_STORM_GLOW_FOG && rainFactor > 0.2) {
+            // Recolor only the fog-added brightening to identify remaining storm glow.
+            vec3 fogAdd = max(mixed - sceneColor, vec3(0.0));
+            return sceneColor + fogAdd * vec3(1.8, 0.08, 0.08);
+        }
+    #endif
+
+    return mixed;
+}
+
 vec3 ClampFogGlow(vec3 sceneColor, vec3 fogColor, float fogAmount) {
     #ifdef OVERWORLD
         float sceneLum = GetLuminance(max(sceneColor, vec3(0.0)));
@@ -106,7 +122,7 @@ vec3 ClampFogGlow(vec3 sceneColor, vec3 fogColor, float fogAmount) {
                 // Prevent bright atmospheric tint from washing dark night terrain.
                 fogColorM = min(fogColorM, color + vec3(0.03));
             #endif
-            color = mix(color, fogColorM, fog);
+            color = ApplyFogMixDebug(color, fogColorM, fog);
 
             #ifndef GBUFFERS_WATER
                 skyFade = fog;
@@ -294,7 +310,7 @@ vec3 ClampFogGlow(vec3 sceneColor, vec3 fogColor, float fogAmount) {
             #ifdef OVERWORLD
                 fogColorM = min(fogColorM, color + vec3(0.025));
             #endif
-            color = mix(color, fogColorM, fog);
+            color = ApplyFogMixDebug(color, fogColorM, fog);
         }
     }
 #endif
