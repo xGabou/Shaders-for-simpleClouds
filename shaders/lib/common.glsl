@@ -30,7 +30,7 @@
     #define WATER_REFLECT_QUALITY 2 //[-1 0 1 2]
     #define BLOCK_REFLECT_QUALITY 3 //[0 1 2 3]
     #define ANISOTROPIC_FILTER 0 //[0 4 8 16]
-    #define CLOUD_SHADOW_QUALITY_MODE = 2 //[0 1 2]
+    #define CLOUD_SHADOW_QUALITY_MODE 2 //[0 1 2]
 
     #define COLORED_LIGHTING 0 //[128 192 256 384 512 768 1024]
     #if defined IRIS_FEATURE_CUSTOM_IMAGES && SHADOW_QUALITY > -1 && !defined MC_OS_MAC && !(defined DH_TERRAIN || defined DH_WATER)

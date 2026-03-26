@@ -15,10 +15,15 @@
     //--------------------------------------------------
     #ifndef SC_UNIFORMS_DECLARED
         #define SC_UNIFORMS_DECLARED
-        uniform vec4  sc_State;            // Visibility, Thickness, Storminess, SmoothStorm
-        uniform vec4  sc_Type;             // Cloud-type weighting
+        uniform vec4  sc_State;                 // Visibility, Thickness, Storminess, SmoothStorm
+        uniform vec4  sc_Type;                  // Cloud-type weighting
         uniform float sc_CloudShadowFactor;
         uniform sampler2D sc_CloudLayerTex;
+        uniform vec2  sc_CloudShadowTexSize;
+        uniform float sc_CloudShadowWorldSpan;
+        uniform vec2  sc_CloudShadowOriginXZ;
+        uniform vec2  sc_CloudShadowScrollXZ;
+        uniform float sc_CloudHeight;
     #endif
 
     #ifndef CLOUD_SHADOW_QUALITY_MODE
@@ -51,7 +56,6 @@
     float scStormDark = Get_SC_StormDarkness();
 
     float Get_SC_ThicknessScale() {
-        // Raw 0.0→1.0 remapped to 0.5→1.5
         return mix(0.5, 1.5, Get_SC_ThicknessRaw());
     }
 
@@ -77,7 +81,7 @@
     }
 
     //--------------------------------------------------
-    // Cloud shadow strength (procedural fallback)
+    // Procedural fallback shadow strength
     //--------------------------------------------------
     float Get_SC_ShadowStrength() {
         float thick = Get_SC_ThicknessRaw();
@@ -92,68 +96,83 @@
     }
 
     //--------------------------------------------------
-    // Cloud layer texture (from Oculus-for-SC)
+    // Actual cloud mask texture (from OFSC)
     //--------------------------------------------------
     bool SC_HasCloudLayerTexture() {
         ivec2 t = textureSize(sc_CloudLayerTex, 0);
-        return (t.x > 0 && t.y > 0);
+        return (t.x > 0 && t.y > 0 && sc_CloudShadowWorldSpan > 0.0001);
     }
 
-    #ifdef FRAGMENT_SHADER
-        vec2 Get_SC_CloudLayerUV() {
-            #ifdef cameraPosition
-                return fract(cameraPosition.xz * 0.000244140625);
-            #else
-                return vec2(0.0);
-            #endif
-        }
-    #else
-        vec2 Get_SC_CloudLayerUV() {
-            return vec2(0.0);
-        }
-    #endif
+    vec2 Get_SC_CloudLayerUV(vec3 worldPos) {
+        vec2 worldXZ = worldPos.xz;
+        return (worldXZ - sc_CloudShadowOriginXZ) / sc_CloudShadowWorldSpan;
+    }
 
-
-    float Sample_SC_CloudLayerShadow() {
+    float Sample_SC_CloudLayerShadow(vec3 worldPos) {
         if (!SC_HasCloudLayerTexture()) return -1.0;
-        float c = texture2D(sc_CloudLayerTex, Get_SC_CloudLayerUV()).r;
+
+        vec2 uv = Get_SC_CloudLayerUV(worldPos);
+        if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) {
+            return 0.0;
+        }
+
+        float c = texture2D(sc_CloudLayerTex, uv).r;
         return clamp(c, 0.0, 1.0);
+    }
+
+    vec3 Get_SC_ShadowSamplePos(vec3 worldPos, vec3 lightDirWorld) {
+        if (lightDirWorld.y <= 0.01 || sc_CloudHeight <= worldPos.y) {
+            return worldPos;
+        }
+
+        float distanceToCloudLayer = sc_CloudHeight - worldPos.y;
+        float travel = min(distanceToCloudLayer / lightDirWorld.y, sc_CloudShadowWorldSpan * 0.75);
+        return worldPos + lightDirWorld * travel;
     }
 
     //--------------------------------------------------
     // Combined shadow result
     //--------------------------------------------------
-    float Get_SC_FinalShadow() {
+    float Get_SC_FinalShadow(vec3 worldPos) {
         int mode = Get_SC_CloudShadowMode();
 
-        // Mode 2 = full texture-driven shadows
         if (mode == 2) {
-            float s = Sample_SC_CloudLayerShadow();
+            float s = Sample_SC_CloudLayerShadow(worldPos);
 
             if (s >= 0.0) {
-                if (s < 0.05 &&
-                    Get_SC_VisibilityFactor() >= 2.5 &&
-                    Get_SC_ThicknessRaw() <= 0.02) return 0.0;
-
-                float cloudDark = smoothstep(0.20, 0.90, s) * 0.75;
+                float cloudDark = smoothstep(0.08, 0.72, s) * 0.82;
                 return cloudDark;
             }
 
-            mode = 1; // fallback
+            mode = 1;
         }
 
-        // Mode 0 = SC-provided default
         if (mode == 0) {
-            if (sc_CloudShadowFactor > 0.0)
+            if (sc_CloudShadowFactor > 0.0) {
                 return clamp(sc_CloudShadowFactor, 0.0, 1.0);
+            }
         }
 
         return Get_SC_ShadowStrength();
     }
 
+    float Get_SC_FinalShadowProjected(vec3 worldPos, vec3 lightDirWorld) {
+        if (lightDirWorld.y <= 0.01) {
+            return 0.0;
+        }
+        return Get_SC_FinalShadow(Get_SC_ShadowSamplePos(worldPos, lightDirWorld));
+    }
+
+    float Get_SC_FinalShadow() {
+        #ifdef cameraPosition
+            return Get_SC_FinalShadow(cameraPosition);
+        #else
+            return 0.0;
+        #endif
+    }
 
 //--------------------------------------------------
-// SC DISABLED → Full valid stub API
+// SC DISABLED -> Full valid stub API
 //--------------------------------------------------
 #else
 
@@ -162,21 +181,23 @@
     #define Get_SC_StorminessValue()         0.0
     #define Get_SC_SmoothStorminessValue()   0.0
 
-    float Get_SC_StormDarkness()         { return 0.0; }
-    float Get_SC_ThicknessScale()        { return 1.0; }
-
-    float Apply_SC_TypeShading(float x) { return x; }
+    float Get_SC_StormDarkness()             { return 0.0; }
+    float Get_SC_ThicknessScale()            { return 1.0; }
+    float Apply_SC_TypeShading(float x)      { return x; }
 
     float scStormDark = 0.0;
 
-    float Get_SC_ShadowStrength()        { return 0.0; }
-    int   Get_SC_CloudShadowMode()       { return 0; }
+    float Get_SC_ShadowStrength()            { return 0.0; }
+    int   Get_SC_CloudShadowMode()           { return 0; }
 
-    bool SC_HasCloudLayerTexture()       { return false; }
-    vec2 Get_SC_CloudLayerUV()           { return vec2(0.0); }
-    float Sample_SC_CloudLayerShadow()   { return -1.0; }
+    bool SC_HasCloudLayerTexture()           { return false; }
+    vec2 Get_SC_CloudLayerUV(vec3 worldPos)  { return vec2(0.0); }
+    float Sample_SC_CloudLayerShadow(vec3 worldPos) { return -1.0; }
+    vec3 Get_SC_ShadowSamplePos(vec3 worldPos, vec3 lightDirWorld) { return worldPos; }
 
-    float Get_SC_FinalShadow()           { return 0.0; }
+    float Get_SC_FinalShadow(vec3 worldPos)  { return 0.0; }
+    float Get_SC_FinalShadowProjected(vec3 worldPos, vec3 lightDirWorld) { return 0.0; }
+    float Get_SC_FinalShadow()               { return 0.0; }
 
 #endif
 

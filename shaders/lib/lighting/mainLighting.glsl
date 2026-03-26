@@ -571,7 +571,6 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
     #endif
     #if defined USE_SC && defined APPLY_SC_CLOUD_SHADOWS
        float cloudShadow = Get_SC_FinalShadow();
-       
 
         // Ignore extremely small values caused by floating noise or empty layers
         if (cloudShadow < 0.05) cloudShadow = 0.0;
