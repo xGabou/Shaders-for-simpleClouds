@@ -69,29 +69,17 @@
     }
 
     float Get_SC_SkyDim() {
-        return mix(1.0, 0.03, smoothstep(0.05, 0.55, Get_SC_Coverage()));
+        return mix(1.0, 0.62, smoothstep(0.25, 0.90, Get_SC_Coverage()));
     }
 
     float Get_SC_SceneDim() {
-        return mix(1.0, 0.12, smoothstep(0.08, 0.70, Get_SC_Coverage()));
+        return mix(1.0, 0.84, smoothstep(0.25, 0.92, Get_SC_Coverage()));
     }
 
     float Get_SC_GlobalLightFactor() {
-        float scDark  = mix(1.0, 0.80, Get_SC_StormDarkness());
-        float scThick = mix(1.0, 0.90, Get_SC_ThicknessRaw());
-        return max(scDark * scThick, 0.65);
-    }
-
-    float Get_SC_PostLightFactor() {
-        float scDark  = mix(1.0, 0.85, Get_SC_StormDarkness());
-        float scThick = mix(1.0, 0.95, Get_SC_ThicknessRaw());
-        return max(scDark * scThick, 0.80);
-    }
-
-    float Get_SC_SurfacePostFactor() {
-        float stormCurve = pow(clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0), 1.35);
-        float thickCurve = pow(clamp(Get_SC_ThicknessRaw(), 0.0, 1.0), 1.2);
-        return mix(1.0, 0.2, stormCurve) * mix(1.0, 0.75, thickCurve);
+        float scDark  = mix(1.0, 0.985, Get_SC_StormDarkness());
+        float scThick = mix(1.0, 0.99, Get_SC_ThicknessRaw());
+        return max(scDark * scThick, 0.965);
     }
 
     float Get_SC_TranslucentPostFactor() {
@@ -126,9 +114,9 @@
     float Get_SC_ShadowStrength() {
         float thick = Get_SC_ThicknessRaw();
         float storm = Get_SC_StormDarkness();
-        float coverage = clamp(thick * 0.65 + storm * 0.45, 0.0, 1.0);
+        float coverage = clamp(thick * 0.48 + storm * 0.34, 0.0, 1.0);
         float shadow = smoothstep(0.25, 0.85, coverage);
-        return shadow * 0.85;
+        return shadow * 0.62;
     }
 
     int Get_SC_CloudShadowMode() {
@@ -206,7 +194,7 @@
     float Get_SC_DirectLightFactor(vec3 worldPos, vec3 lightDirWorld) {
         float cloudShadow = Get_SC_FinalShadowProjected(worldPos, lightDirWorld);
         if (cloudShadow < 0.05) cloudShadow = 0.0;
-        return clamp(1.0 - cloudShadow, 0.1, 1.0);
+        return clamp(1.0 - cloudShadow, 0.35, 1.0);
     }
 
     float Get_SC_SpecularFade(vec3 worldPos, vec3 lightDirWorld) {
@@ -234,8 +222,6 @@
     float Get_SC_SkyDim()                    { return 1.0; }
     float Get_SC_SceneDim()                  { return 1.0; }
     float Get_SC_GlobalLightFactor()         { return 1.0; }
-    float Get_SC_PostLightFactor()           { return 1.0; }
-    float Get_SC_SurfacePostFactor()         { return 1.0; }
     float Get_SC_TranslucentPostFactor()     { return 1.0; }
     float Apply_SC_TypeShading(float x)      { return x; }
 

@@ -135,9 +135,6 @@ void main() {
                worldGeoNormal, lmCoordM, noSmoothLighting, noDirectionalShading, noVanillaAO,
                centerShadowBias, subsurfaceMode, smoothnessG, highlightMult, emission);
 
-    #if USE_SC
-        color.rgb *= Get_SC_SurfacePostFactor();
-    #endif
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = color;
 }

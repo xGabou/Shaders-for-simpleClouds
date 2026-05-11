@@ -460,18 +460,6 @@ void main() {
         #ifdef OVERWORLD
 
         #if USE_SC
-            float scStorm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-            float scThick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
-
-            // Shadow on ground
-            float scCloudShadow = smoothstep(0.25, 0.85, max(scStorm, scThick));
-
-            // Volume shading when INSIDE a cloud
-            float scInside = smoothstep(0.15, 0.45, scThick);
-
-            // Combined storm + inside darkness
-            float scTotalDark = max(scCloudShadow, scInside * 0.8);
-
             vec3 worldPos = cameraPosition + playerPos;
             float lightningPresence = step(0.5, lightningBoltPosition.w);
             float lightningDistance = length(lightningBoltPosition.xyz - worldPos);
@@ -479,12 +467,9 @@ void main() {
             float lightningFlash = lightningPresence * lightningReach * smoothstep(0.4, 0.95, rainStrength);
             float lightningGlow = lightningFlash * exp(-lightningDistance * 0.01);
 
-            // Apply darkening → SC-like storm and volume fog
-            color *= mix(vec3(1.0), vec3(0.3, 0.33, 0.38), scTotalDark);
             color += lightningFlash * vec3(0.6, 0.7, 0.9);
             color += lightningGlow * vec3(0.2, 0.24, 0.28);
 
-            waterRefColor *= mix(1.0, 0.25, scTotalDark);
             waterRefColor += lightningFlash * vec3(0.45, 0.55, 0.7);
             waterRefColor += lightningGlow * vec3(0.25, 0.35, 0.45);
 

@@ -348,11 +348,6 @@ void main() {
         ColorCodeProgram(color, mat);
     #endif
 
-    #if USE_SC
-        color.rgb *= Get_SC_SurfacePostFactor();
-    #endif
-
-
     /* DRAWBUFFERS:06 */
     gl_FragData[0] = color;
     gl_FragData[1] = vec4(smoothnessD, materialMask, skyLightFactor, 1.0);

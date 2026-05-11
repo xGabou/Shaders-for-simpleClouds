@@ -506,7 +506,7 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
             float rainLF = 0.1 * rainFactor;
             float lightFogTweaks = 1.0 + max0(96.0 - lViewPos) * (0.002 * (1.0 - sunVisibility2) + 0.0104 * rainLF) - rainLF;
             #if USE_SC
-                lightFogTweaks *= mix(1.0, 0.1, Get_SC_Coverage());
+                lightFogTweaks *= mix(1.0, 0.92, smoothstep(0.25, 0.90, Get_SC_Coverage()));
             #endif
             ambientMult *= lightFogTweaks;
             lightColorM *= lightFogTweaks;
@@ -682,39 +682,5 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
     color.rgb *= finalDiffuse;
     color.rgb += lightHighlight;
     color.rgb *= pow2(1.0 - darknessLightFactor);
-    // ===== SimpleClouds global post-light attenuation =====
-    #if USE_SC
-    {
-        float scFactor = Get_SC_PostLightFactor();
-
-        #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
-            scFactor = 1.0;
-        #endif
-
-        // soften the influence to avoid double darkening
-        color.rgb *= mix(1.0, scFactor, 0.35);
-
-        // vec3 dbg = vec3(0.0);
-        // float v = Get_SC_VisibilityFactor();
-
-        // if      (v <= 0.0) dbg = vec3(0.0, 0.0, 0.0);          // 0.0 → black
-        // else if (v <= 0.1) dbg = vec3(1.0, 0.0, 0.0);          // 0.1 → red
-        // else if (v <= 0.2) dbg = vec3(1.0, 0.5, 0.0);          // 0.2 → orange
-        // else if (v <= 0.3) dbg = vec3(1.0, 1.0, 0.0);          // 0.3 → yellow
-        // else if (v <= 0.4) dbg = vec3(0.5, 1.0, 0.0);          // 0.4 → yellow-green
-        // else if (v <= 0.5) dbg = vec3(0.0, 1.0, 0.0);          // 0.5 → green
-        // else if (v <= 0.6) dbg = vec3(0.0, 1.0, 0.5);          // 0.6 → aqua-green
-        // else if (v <= 0.7) dbg = vec3(0.0, 0.0, 0.0);          // 0.7 → cyan
-        // else if (v <= 0.8) dbg = vec3(0.0, 0.5, 1.0);          // 0.8 → blue-cyan
-        // else if (v <= 0.9) dbg = vec3(0.0, 0.0, 1.0);          // 0.9 → blue
-        // else if (v <  1.0) dbg = vec3(0.5, 0.0, 1.0);          // 1.0− → violet
-        // else                dbg = vec3(1.0, 0, 1.0);         // >= 1.0 → purple
-
-        // // overlay debug
-        // color.rgb = mix(color.rgb, dbg, 0.4);
-
-
-    }
-    #endif
 
 }
