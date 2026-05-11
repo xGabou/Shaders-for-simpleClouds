@@ -47,43 +47,11 @@ void DoNaturalShadowCalculation(inout vec4 color1, inout vec4 color2) {
 #endif
 
 #if ATM_CLOUD_SHADOWS == 1 && defined OVERWORLD
-float SampleProceduralCloudDensity(vec3 worldPos, float coverage) {
-    const float cloudBase = 96.0;
-    const float cloudTop  = 220.0;
-    float heightMask = smoothstep(cloudBase - 16.0, cloudBase + 24.0, worldPos.y)
-                     * smoothstep(cloudTop + 32.0, cloudTop - 32.0, worldPos.y);
-    if (heightMask <= 0.0) return 0.0;
-
-    vec2 coord = worldPos.xz * 0.002 + frameTimeCounter * 0.002;
-    float noise = texture2D(noisetex, coord).g;
-          noise += texture2D(noisetex, coord * 0.5 + 0.37).r * 0.5;
-    float threshold = mix(0.72, 0.5, coverage);
-    float density = smoothstep(threshold - 0.08, threshold + 0.1, noise);
-    return density * heightMask;
-}
-
     #if USE_SC
 
         float GetCloudShadowMask(vec3 worldPos, vec3 sunDirection) {
-            float scStorm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-            float scThick = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
-            float coverage = max(max(scStorm, scThick), rainFactor);
-
-            if (coverage < 0.05) return 0.0;
-
-            vec3 dir = normalize(sunDirection);
-            float opacity = 0.0;
-            const float stepLength = 18.0;
-
-            for (int i = 0; i < 6; i++) {
-                worldPos += dir * stepLength;
-                float density = SampleProceduralCloudDensity(worldPos, coverage);
-                opacity += density * stepLength * 0.015;
-                if (opacity >= 1.0) break;
-            }
-
-            opacity *= coverage;
-            return clamp(opacity, 0.0, 1.0);
+            vec3 lightDirWorld = normalize(mat3(gbufferModelViewInverse) * sunDirection);
+            return Get_SC_FinalShadowProjected(worldPos, lightDirWorld);
         }
 
     #else
@@ -101,7 +69,7 @@ void main() {
     vec4 color1 = texture2DLod(tex, texCoord, 0); // Shadow Color
 
     #if ATM_CLOUD_SHADOWS == 1 && defined OVERWORLD
-        float cloudShadowMask = GetCloudShadowMask(position.xyz, -sunVec);
+        float cloudShadowMask = GetCloudShadowMask(position.xyz + cameraPosition, -sunVec);
     #else
         float cloudShadowMask = 0.0;
     #endif

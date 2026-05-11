@@ -2,8 +2,13 @@
 #define SC_BRIDGE_GLSL
 
 // SC ENABLE FLAGS (manual override, Iris cannot auto-detect)
-#define USE_SC 1
-#define USE_SC_CLOUDS 0
+#ifndef USE_SC
+    #define USE_SC 1
+#endif
+
+#ifndef USE_SC_CLOUDS
+    #define USE_SC_CLOUDS USE_SC
+#endif
 
 //--------------------------------------------------
 // FULL CLOUDS FEATURE SET (SimpleClouds active)
@@ -57,6 +62,41 @@
 
     float Get_SC_ThicknessScale() {
         return mix(0.5, 1.5, Get_SC_ThicknessRaw());
+    }
+
+    float Get_SC_Coverage() {
+        return clamp(max(Get_SC_StormDarkness(), Get_SC_ThicknessRaw()), 0.0, 1.0);
+    }
+
+    float Get_SC_SkyDim() {
+        return mix(1.0, 0.03, smoothstep(0.05, 0.55, Get_SC_Coverage()));
+    }
+
+    float Get_SC_SceneDim() {
+        return mix(1.0, 0.12, smoothstep(0.08, 0.70, Get_SC_Coverage()));
+    }
+
+    float Get_SC_GlobalLightFactor() {
+        float scDark  = mix(1.0, 0.80, Get_SC_StormDarkness());
+        float scThick = mix(1.0, 0.90, Get_SC_ThicknessRaw());
+        return max(scDark * scThick, 0.65);
+    }
+
+    float Get_SC_PostLightFactor() {
+        float scDark  = mix(1.0, 0.85, Get_SC_StormDarkness());
+        float scThick = mix(1.0, 0.95, Get_SC_ThicknessRaw());
+        return max(scDark * scThick, 0.80);
+    }
+
+    float Get_SC_SurfacePostFactor() {
+        float stormCurve = pow(clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0), 1.35);
+        float thickCurve = pow(clamp(Get_SC_ThicknessRaw(), 0.0, 1.0), 1.2);
+        return mix(1.0, 0.2, stormCurve) * mix(1.0, 0.75, thickCurve);
+    }
+
+    float Get_SC_TranslucentPostFactor() {
+        float stormCurve = pow(clamp(Get_SC_StormDarkness() / 0.6, 0.0, 1.0), 2.2);
+        return max(mix(1.0, 0.80, stormCurve), 0.8);
     }
 
     //--------------------------------------------------
@@ -163,12 +203,19 @@
         return Get_SC_FinalShadow(Get_SC_ShadowSamplePos(worldPos, lightDirWorld));
     }
 
+    float Get_SC_DirectLightFactor(vec3 worldPos, vec3 lightDirWorld) {
+        float cloudShadow = Get_SC_FinalShadowProjected(worldPos, lightDirWorld);
+        if (cloudShadow < 0.05) cloudShadow = 0.0;
+        return clamp(1.0 - cloudShadow, 0.1, 1.0);
+    }
+
+    float Get_SC_SpecularFade(vec3 worldPos, vec3 lightDirWorld) {
+        float cloudShadow = Get_SC_FinalShadowProjected(worldPos, lightDirWorld);
+        return 1.0 - smoothstep(0.25, 0.85, cloudShadow);
+    }
+
     float Get_SC_FinalShadow() {
-        #ifdef cameraPosition
-            return Get_SC_FinalShadow(cameraPosition);
-        #else
-            return 0.0;
-        #endif
+        return Get_SC_FinalShadow(cameraPosition);
     }
 
 //--------------------------------------------------
@@ -183,6 +230,13 @@
 
     float Get_SC_StormDarkness()             { return 0.0; }
     float Get_SC_ThicknessScale()            { return 1.0; }
+    float Get_SC_Coverage()                  { return 0.0; }
+    float Get_SC_SkyDim()                    { return 1.0; }
+    float Get_SC_SceneDim()                  { return 1.0; }
+    float Get_SC_GlobalLightFactor()         { return 1.0; }
+    float Get_SC_PostLightFactor()           { return 1.0; }
+    float Get_SC_SurfacePostFactor()         { return 1.0; }
+    float Get_SC_TranslucentPostFactor()     { return 1.0; }
     float Apply_SC_TypeShading(float x)      { return x; }
 
     float scStormDark = 0.0;
@@ -197,6 +251,8 @@
 
     float Get_SC_FinalShadow(vec3 worldPos)  { return 0.0; }
     float Get_SC_FinalShadowProjected(vec3 worldPos, vec3 lightDirWorld) { return 0.0; }
+    float Get_SC_DirectLightFactor(vec3 worldPos, vec3 lightDirWorld) { return 1.0; }
+    float Get_SC_SpecularFade(vec3 worldPos, vec3 lightDirWorld) { return 1.0; }
     float Get_SC_FinalShadow()               { return 0.0; }
 
 #endif

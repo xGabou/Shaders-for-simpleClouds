@@ -505,15 +505,8 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
             // Less light in the distance / more light closer to the camera during rain or night to simulate thicker fog
             float rainLF = 0.1 * rainFactor;
             float lightFogTweaks = 1.0 + max0(96.0 - lViewPos) * (0.002 * (1.0 - sunVisibility2) + 0.0104 * rainLF) - rainLF;
-            // --- SimpleClouds attenuation for ground brightness ---
             #if USE_SC
-            {
-                float scCoverage = max(Get_SC_StormDarkness(), Get_SC_ThicknessRaw());
-                float shadowAdv = clamp(scCoverage, 0.0, 1.0);
-
-                // Hard stop direct sun when coverage is near 1
-                lightFogTweaks *= 1.0 - shadowAdv * 0.9;
-            }
+                lightFogTweaks *= mix(1.0, 0.1, Get_SC_Coverage());
             #endif
             ambientMult *= lightFogTweaks;
             lightColorM *= lightFogTweaks;
@@ -570,14 +563,10 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
         lightColorM = lightColorM * 0.3;
     #endif
     #if defined USE_SC && defined APPLY_SC_CLOUD_SHADOWS
-       float cloudShadow = Get_SC_FinalShadow();
+        vec3 scWorldPos = playerPos + cameraPosition;
+        vec3 scLightDirWorld = normalize(mat3(gbufferModelViewInverse) * lightVec);
+        float scDirShadow = Get_SC_DirectLightFactor(scWorldPos, scLightDirWorld);
 
-        // Ignore extremely small values caused by floating noise or empty layers
-        if (cloudShadow < 0.05) cloudShadow = 0.0;
-
-        float scDirShadow = clamp(1.0 - cloudShadow, 0.1, 1.0);
-
-        //float scDirShadow = clamp(1.0 - 0, 0.1, 1.0);
         // Entities and held items were becoming pitch black because they only
         // receive direct light attenuation in this pass.  Keep most of the
         // shading for terrain, but greatly soften it for those programs so
@@ -589,10 +578,8 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
         shadowMult *= scDirShadow;
     #endif
     // ===== SimpleClouds global light attenuation =====
-    #if USE_SC  // optional, remove if not needed
-        float scDark  = mix(1.0, 0.80, Get_SC_StormDarkness());
-        float scThick = mix(1.0, 0.90, Get_SC_ThicknessRaw());
-        float scLightFactor = max(scDark * scThick, 0.65);
+    #if USE_SC
+        float scLightFactor = Get_SC_GlobalLightFactor();
 
         #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
             scLightFactor = 1.0;
@@ -673,8 +660,9 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
 
         #if USE_SC
             // Fade specular glare when thick clouds block the sun
-            float scShadow = clamp(Get_SC_FinalShadow(), 0.0, 1.0);
-            float scGlareFade = 1.0 - smoothstep(0.25, 0.85, scShadow);
+            vec3 scSpecWorldPos = playerPos + cameraPosition;
+            vec3 scSpecLightDirWorld = normalize(mat3(gbufferModelViewInverse) * lightVec);
+            float scGlareFade = Get_SC_SpecularFade(scSpecWorldPos, scSpecLightDirWorld);
             lightHighlight *= scGlareFade;
         #endif
 
@@ -697,9 +685,7 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
     // ===== SimpleClouds global post-light attenuation =====
     #if USE_SC
     {
-        float scDark  = mix(1.0, 0.85, Get_SC_StormDarkness());
-        float scThick = mix(1.0, 0.95, Get_SC_ThicknessRaw());
-        float scFactor = max(scDark * scThick, 0.80);
+        float scFactor = Get_SC_PostLightFactor();
 
         #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
             scFactor = 1.0;

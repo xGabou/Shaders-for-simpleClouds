@@ -182,22 +182,7 @@ void main() {
         ColorCodeProgram(color, -1);
     #endif
     #if USE_SC
-    {
-        float stormRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-
-        // Normalize so 0.6 = cumulonimbus level
-        float stormN = clamp(stormRaw / 0.6, 0.0, 1.0);
-
-        // Smooth curve for better visual blending
-        float stormCurve = pow(stormN, 2.2);
-
-        // Particles must stay visible → keep a minimum
-        float scDarkFactor = mix(1.0, 0.80, stormCurve);
-        scDarkFactor = max(scDarkFactor, 0.8);
-
-        // Apply to RGB, not alpha
-        color.rgb *= scDarkFactor;
-    }
+        color.rgb *= Get_SC_TranslucentPostFactor();
     #endif
 
 

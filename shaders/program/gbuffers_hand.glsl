@@ -166,9 +166,9 @@ void main() {
 
     #if USE_SC
     {
-        float scShadow = clamp(1.0, 0.0, 1.0);
+        float scCoverage = Get_SC_Coverage();
         vec3 skyGlow = mix(ambientColor, skyColor * 1.2, 0.5) * 0.6;
-        color.rgb = mix(color.rgb, mix(color.rgb, skyGlow, 0.7), scShadow * 0.5);
+        color.rgb = mix(color.rgb, mix(color.rgb, skyGlow, 0.7), scCoverage * 0.5);
     }
     #endif
 

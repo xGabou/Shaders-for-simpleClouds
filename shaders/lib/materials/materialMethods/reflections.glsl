@@ -209,7 +209,10 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
                 #if USE_SC
                     float storm = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
                     float stormLightFade = 1.0 - smoothstep(0.20, 0.70, storm);
-                    float forcedSkyLight = skyLightFactor * stormLightFade;
+                    vec3 scReflWorldPos = playerPos + cameraPosition;
+                    vec3 scReflLightDirWorld = normalize(mat3(gbufferModelViewInverse) * lightVec);
+                    float forcedSkyLight = skyLightFactor * stormLightFade
+                                         * Get_SC_DirectLightFactor(scReflWorldPos, scReflLightDirWorld);
                 #else
                     float forcedSkyLight = skyLightFactor;
                 #endif
@@ -220,8 +223,9 @@ vec4 GetReflection(vec3 normalM, vec3 viewPos, vec3 nViewPos, vec3 playerPos, fl
 
                 #if USE_SC
                     // Reduce sun glints on water when clouds cast heavy shadows
-                    float scShadow = clamp(Get_SC_FinalShadow(), 0.0, 1.0);
-                    float scGlareFade = 1.0 - smoothstep(0.25, 0.85, scShadow);
+                    vec3 scReflWorldPos = playerPos + cameraPosition;
+                    vec3 scReflLightDirWorld = normalize(mat3(gbufferModelViewInverse) * lightVec);
+                    float scGlareFade = Get_SC_SpecularFade(scReflWorldPos, scReflLightDirWorld);
                     specularHighlight *= scGlareFade;
                 #endif
 

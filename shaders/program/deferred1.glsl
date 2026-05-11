@@ -3,8 +3,8 @@
 /////////////////////////////////////
 
 //Common//
-#include "/lib/util/sc_bridge.glsl"
 #include "/lib/common.glsl"
+#include "/lib/util/sc_bridge.glsl"
 
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
@@ -35,13 +35,8 @@ vec2 view = vec2(viewWidth, viewHeight);
 
 #ifdef OVERWORLD
     #if USE_SC
-        float scStorm     = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
-        float scThick     = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
-        float scCoverage  = clamp(max(scStorm, scThick), 0.0, 1.0);
-        float scSkyFade   = smoothstep(0.05, 0.55, scCoverage);
-        float scSceneFade = smoothstep(0.08, 0.70, scCoverage);
-        float scSkyDim    = mix(1.0, 0.03, scSkyFade);
-        float scSceneDim  = mix(1.0, 0.12, scSceneFade);
+        float scSkyDim   = Get_SC_SkyDim();
+        float scSceneDim = Get_SC_SceneDim();
     #else
         float scSkyDim   = 1.0;
         float scSceneDim = 1.0;
@@ -211,6 +206,24 @@ void main() {
     float lViewPos = length(viewPos);
     vec3 nViewPos = normalize(viewPos.xyz);
     vec3 playerPos = ViewToPlayer(viewPos.xyz);
+
+    float cloudSceneDistance = lViewPos;
+    vec3 cloudScenePlayerPos = playerPos;
+
+    #ifdef DISTANT_HORIZONS
+        float cloudDhDepth = texelFetch(dhDepthTex, texelCoord, 0).r;
+        if (cloudDhDepth < 1.0) {
+            vec4 cloudScreenPosDH = vec4(texCoord, cloudDhDepth, 1.0);
+            vec4 cloudViewPosDH = dhProjectionInverse * (cloudScreenPosDH * 2.0 - 1.0);
+            cloudViewPosDH /= cloudViewPosDH.w;
+
+            float cloudDhDistance = length(cloudViewPosDH.xyz);
+            if (z0 >= 1.0 || cloudDhDistance < cloudSceneDistance) {
+                cloudSceneDistance = cloudDhDistance;
+                cloudScenePlayerPos = ViewToPlayer(cloudViewPosDH.xyz);
+            }
+        }
+    #endif
 
     float dither = texture2D(noisetex, texCoord * vec2(viewWidth, viewHeight) / 128.0).b;
     #if defined TAA || defined TEMPORAL_FILTER
@@ -564,8 +577,8 @@ void main() {
         float cloudZCheck = 0.56;
 
         if (z0 > cloudZCheck) {
-            clouds = GetClouds(cloudLinearDepth, skyFade, cameraPosition, playerPos,
-                               lViewPos, VdotS, VdotU, dither, auroraBorealis, nightNebula);
+            clouds = GetClouds(cloudLinearDepth, skyFade, cameraPosition, cloudScenePlayerPos,
+                               cloudSceneDistance, VdotS, VdotU, dither, auroraBorealis, nightNebula);
 
             #ifdef OVERWORLD
                 clouds.rgb *= scSkyDim;
