@@ -298,16 +298,18 @@ void main() {
     color = pow(color, vec3(2.2));
     #if USE_SC
     {
-        float scStorm    = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
-        float scThick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
-        float scCoverage = clamp(max(scStorm, scThick), 0.0, 1.0);
-        float scCurve    = smoothstep(0.12, 0.75, scCoverage);
+        if (!SC_HasRealCloudShadowMap()) {
+            float scStorm    = clamp(Get_SC_SmoothStorminessValue(), 0.0, 1.0);
+            float scThick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+            float scCoverage = clamp(max(scStorm, scThick), 0.0, 1.0);
+            float scCurve    = smoothstep(0.12, 0.75, scCoverage);
 
-        float scExposure = mix(1.0, 0.28, scCurve);
-        color *= scExposure;
+            float scExposure = mix(1.0, 0.28, scCurve);
+            color *= scExposure;
 
-        // Kill any remaining sun shafts once thick storms roll in
-        volumetricEffect.rgb *= 1.0 - scCurve;
+            // Kill any remaining sun shafts once thick storms roll in
+            volumetricEffect.rgb *= 1.0 - scCurve;
+        }
     }
     #endif
 

@@ -69,43 +69,40 @@
 
 
         #if USE_SC
-            float thicknessMask = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+            float scRegionShadowActive = SC_HasRealCloudShadowMap() ? 0.0 : 1.0;
+            float thicknessMask = scRegionShadowActive * clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
             float lightThicknessBoost   = mix(1.0, 0.85, thicknessMask);
             float ambientThicknessBoost = mix(1.0, 0.9, thicknessMask);
             #if defined GBUFFERS_ENTITIES || defined GBUFFERS_HAND || defined GBUFFERS_TEXTURED
-
                 vec3 lightColor   = baseLightColor * lightThicknessBoost;
                 vec3 ambientColor = baseAmbientColor * ambientThicknessBoost;
-
             #else
-                    float storm    = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
-                    float thick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
+                float storm    = scRegionShadowActive * clamp(Get_SC_StormDarkness(), 0.0, 1.0);
+                float thick    = thicknessMask;
 
-                    float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
-                    float stormCurve = pow(stormNorm, 1.45);
+                float stormNorm  = clamp(storm / 0.6, 0.0, 1.0);
+                float stormCurve = pow(stormNorm, 1.45);
 
-                    float lightDim   = mix(1.0, 0.28, stormCurve);
-                    float ambientDim = mix(1.0, 0.40, stormCurve);
+                float lightDim   = mix(1.0, 0.28, stormCurve);
+                float ambientDim = mix(1.0, 0.40, stormCurve);
 
-                    float thickDimLight   = mix(1.0, 0.70, thick);
-                    float thickDimAmbient = mix(1.0, 0.80, thick);
+                float thickDimLight   = mix(1.0, 0.70, thick);
+                float thickDimAmbient = mix(1.0, 0.80, thick);
 
-                    vec3 lightColor =
-                        baseLightColor
-                        * mix(1.0, 0.45, scStormDark)
-                        * lightThicknessBoost
-                        * lightDim
-                        * thickDimLight;
+                vec3 lightColor =
+                    baseLightColor
+                    * mix(1.0, 0.45, scStormDark * scRegionShadowActive)
+                    * lightThicknessBoost
+                    * lightDim
+                    * thickDimLight;
 
-                    vec3 ambientColor =
-                        baseAmbientColor
-                        * mix(1.0, 0.7, scStormDark)
-                        * ambientThicknessBoost
-                        * ambientDim
-                        * thickDimAmbient;
-
+                vec3 ambientColor =
+                    baseAmbientColor
+                    * mix(1.0, 0.7, scStormDark * scRegionShadowActive)
+                    * ambientThicknessBoost
+                    * ambientDim
+                    * thickDimAmbient;
             #endif
-
         #else
             float thicknessMask = 0.0;
             float lightThicknessBoost = 1.0;
