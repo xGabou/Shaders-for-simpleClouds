@@ -506,7 +506,8 @@ void DoLighting(inout vec4 color, inout vec3 shadowMult, vec3 playerPos, vec3 vi
             float rainLF = 0.1 * rainFactor;
             float lightFogTweaks = 1.0 + max0(96.0 - lViewPos) * (0.002 * (1.0 - sunVisibility2) + 0.0104 * rainLF) - rainLF;
             #if USE_SC
-                lightFogTweaks *= mix(1.0, 0.92, smoothstep(0.25, 0.90, Get_SC_Coverage()));
+                float scLightLeak = max(Get_SC_HighStormLightLeak(), smoothstep(0.70, 1.0, rainFactor));
+                lightFogTweaks *= max(mix(1.0, 0.92, smoothstep(0.25, 0.90, Get_SC_Coverage())), mix(0.92, 0.96, scLightLeak));
             #endif
             ambientMult *= lightFogTweaks;
             lightColorM *= lightFogTweaks;

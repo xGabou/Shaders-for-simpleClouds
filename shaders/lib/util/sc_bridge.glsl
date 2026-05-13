@@ -10,6 +10,18 @@
     #define USE_SC_CLOUDS USE_SC
 #endif
 
+#ifndef SC_REAL_SHADOW_UNIFORMS_DECLARED
+    #define SC_REAL_SHADOW_UNIFORMS_DECLARED
+    uniform sampler2D sc_RealCloudShadowMap;
+    uniform float sc_RealCloudShadowAvailable;
+    uniform vec2  sc_RealCloudShadowTexSize;
+    uniform mat4  sc_RealCloudShadowProjMat;
+    uniform mat4  sc_RealCloudShadowModelViewMat;
+    uniform float sc_RealCloudShadowSpan;
+    uniform float sc_RealCloudShadowMinRadius;
+    uniform float sc_RealCloudShadowFadeDistance;
+#endif
+
 //--------------------------------------------------
 // FULL CLOUDS FEATURE SET (SimpleClouds active)
 //--------------------------------------------------
@@ -59,6 +71,14 @@
     }
 
     float scStormDark = Get_SC_StormDarkness();
+
+    float Get_SC_HighStormLightLeak() {
+        return smoothstep(0.70, 1.0, clamp(Get_SC_StormDarkness(), 0.0, 1.0));
+    }
+
+    float Get_SC_SunTransmissionFloor() {
+        return 0.18 * Get_SC_HighStormLightLeak();
+    }
 
     float Get_SC_ThicknessScale() {
         return mix(0.5, 1.5, Get_SC_ThicknessRaw());
@@ -131,6 +151,17 @@
         return (t.x > 0 && t.y > 0 && sc_CloudShadowWorldSpan > 0.0001);
     }
 
+    bool SC_HasRealCloudShadowMap() {
+        return sc_RealCloudShadowAvailable > 0.5
+            && sc_RealCloudShadowTexSize.x > 0.5
+            && sc_RealCloudShadowTexSize.y > 0.5
+            && sc_RealCloudShadowSpan > 0.0;
+    }
+
+    bool SC_HasRealCloudShadow() {
+        return SC_HasRealCloudShadowMap();
+    }
+
     vec2 Get_SC_CloudLayerUV(vec3 worldPos) {
         vec2 worldXZ = worldPos.xz;
         return (worldXZ - sc_CloudShadowOriginXZ) / sc_CloudShadowWorldSpan;
@@ -194,7 +225,8 @@
     float Get_SC_DirectLightFactor(vec3 worldPos, vec3 lightDirWorld) {
         float cloudShadow = Get_SC_FinalShadowProjected(worldPos, lightDirWorld);
         if (cloudShadow < 0.05) cloudShadow = 0.0;
-        return clamp(1.0 - cloudShadow, 0.35, 1.0);
+        float sunFloor = mix(0.35, 0.45, Get_SC_HighStormLightLeak());
+        return clamp(1.0 - cloudShadow, sunFloor, 1.0);
     }
 
     float Get_SC_SpecularFade(vec3 worldPos, vec3 lightDirWorld) {
@@ -218,6 +250,8 @@
 
     float Get_SC_StormDarkness()             { return 0.0; }
     float Get_SC_ThicknessScale()            { return 1.0; }
+    float Get_SC_HighStormLightLeak()        { return 0.0; }
+    float Get_SC_SunTransmissionFloor()      { return 0.0; }
     float Get_SC_Coverage()                  { return 0.0; }
     float Get_SC_SkyDim()                    { return 1.0; }
     float Get_SC_SceneDim()                  { return 1.0; }
@@ -231,6 +265,8 @@
     int   Get_SC_CloudShadowMode()           { return 0; }
 
     bool SC_HasCloudLayerTexture()           { return false; }
+    bool SC_HasRealCloudShadowMap()         { return false; }
+    bool SC_HasRealCloudShadow()            { return false; }
     vec2 Get_SC_CloudLayerUV(vec3 worldPos)  { return vec2(0.0); }
     float Sample_SC_CloudLayerShadow(vec3 worldPos) { return -1.0; }
     vec3 Get_SC_ShadowSamplePos(vec3 worldPos, vec3 lightDirWorld) { return worldPos; }

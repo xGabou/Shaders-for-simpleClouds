@@ -241,9 +241,10 @@ void main() {
         float scRaw = clamp(Get_SC_StormDarkness(), 0.0, 1.0);
         float scMask = step(0.08, scRaw);              // 1 = storm, 0 = normal
         float scDisable = scMask * scRaw;              // progressive darkening
-        sunFactor     *= (1.0 - scDisable);
-        sunVisibility *= (1.0 - scDisable);
-        sunVisibility2*= (1.0 - scDisable);
+        float scSunTransmission = max(1.0 - scDisable, max(Get_SC_SunTransmissionFloor(), 0.18 * smoothstep(0.70, 1.0, rainFactor)));
+        sunFactor     *= scSunTransmission;
+        sunVisibility *= scSunTransmission;
+        sunVisibility2*= scSunTransmission;
     #endif
     float skyFade = 0.0;
     vec3 waterRefColor = vec3(0.0);

@@ -303,12 +303,12 @@ void main() {
             float scThick    = clamp(Get_SC_ThicknessRaw(), 0.0, 1.0);
             float scCoverage = clamp(max(scStorm, scThick), 0.0, 1.0);
             float scCurve    = smoothstep(0.12, 0.75, scCoverage);
+            float sunLeak    = max(Get_SC_HighStormLightLeak(), smoothstep(0.70, 1.0, rainFactor));
 
-            float scExposure = mix(1.0, 0.28, scCurve);
+            float scExposure = mix(1.0, mix(0.28, 0.42, sunLeak), scCurve);
             color *= scExposure;
 
-            // Kill any remaining sun shafts once thick storms roll in
-            volumetricEffect.rgb *= 1.0 - scCurve;
+            volumetricEffect.rgb *= max(1.0 - scCurve, 0.12 * sunLeak);
         }
     }
     #endif
